@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>ARMS Roulette Pro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffde00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--yellow:#ffde00;--red:#ff2d2d;--black:#0a0a0a;--white:#f5f5f5;--gray:#1a1a1a;--gray2:#2a2a2a;--gray3:#3a3a3a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--black);color:var(--white);min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+.header{background:var(--yellow);padding:14px 16px 12px;text-align:center;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(0,0,0,.06) 8px,rgba(0,0,0,.06) 16px)}
+.header h1{font-family:'Black Ops One',cursive;font-size:1.6rem;color:var(--black);letter-spacing:.05em;position:relative;text-shadow:2px 2px 0 rgba(255,255,255,.3)}
+.header p{font-size:.65rem;color:var(--black);opacity:.7;font-weight:700;letter-spacing:.1em;text-transform:uppercase;position:relative;margin-top:2px}
+
+/* LAYOUT */
+.main{padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-width:440px;margin:0 auto}
+
+/* PANEL */
+.panel{background:var(--gray);border-radius:12px;border:1px solid var(--gray3);overflow:hidden}
+.panel-head{background:var(--gray2);padding:9px 14px;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--yellow);font-family:'Black Ops One',cursive;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray3);cursor:pointer;user-select:none}
+.panel-head-left{display:flex;align-items:center;gap:6px}
+.panel-head .dot{width:6px;height:6px;border-radius:50%;background:var(--yellow)}
+.panel-head-arrow{font-size:.6rem;color:#666;transition:transform .25s}
+.panel-head.open .panel-head-arrow{transform:rotate(180deg)}
+.panel-body{padding:12px 14px}
+.panel-collapse{overflow:hidden;max-height:0;transition:max-height .35s ease}
+.panel-collapse.open{max-height:9999px}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0}
+.toggle-row+.toggle-row{border-top:1px solid var(--gray3)}
+.toggle-label{font-size:.78rem;font-weight:700;color:var(--white)}
+.toggle-label small{display:block;font-size:.62rem;color:#888;font-weight:400;margin-top:1px}
+.switch{position:relative;width:42px;height:24px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:var(--gray3);border-radius:24px;cursor:pointer;transition:.25s}
+.slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#888;border-radius:50%;transition:.25s}
+.switch input:checked+.slider{background:var(--yellow)}
+.switch input:checked+.slider::before{transform:translateX(18px);background:var(--black)}
+
+/* 3P MODE */
+#name-section{display:none;border-top:1px solid var(--gray3);padding-top:10px;margin-top:4px;padding-bottom:2px}
+.name-toggle-btn{width:100%;background:transparent;border:1px dashed #444;border-radius:8px;color:#888;font-size:.72rem;font-weight:700;padding:7px 12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;transition:.15s}
+.name-toggle-btn:hover{border-color:#666;color:#aaa}
+.ntarrow{transition:transform .2s;display:inline-block}
+.name-toggle-btn.open .ntarrow{transform:rotate(180deg)}
+.name-collapse{overflow:hidden;max-height:0;transition:max-height .3s ease}
+.name-collapse.open{max-height:220px}
+.name-row{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.name-inp-wrap{display:flex;align-items:center;gap:8px}
+.name-inp-label{font-size:.68rem;font-weight:700;color:#888;width:22px;flex-shrink:0;text-align:right}
+.name-inp{flex:1;background:var(--gray3);border:1px solid #444;color:var(--white);padding:9px 12px;border-radius:8px;font-size:.85rem;outline:none;font-family:'Noto Sans JP',sans-serif}
+.name-inp:focus{border-color:var(--yellow)}
+.name-inp::placeholder{color:#555}
+.match-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px}
+.match-btn{background:var(--gray3);color:#999;border:2px solid #444;padding:10px 4px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;font-family:'Noto Sans JP',sans-serif}
+.match-btn:active{transform:scale(.97)}
+.match-btn.active{background:var(--yellow);color:var(--black);border-color:var(--yellow)}
+.match-btn .vs{font-size:.52rem;opacity:.6}
+
+/* EXCLUDE */
+.exc-collapsible-head{display:flex;align-items:center;justify-content:space-between;padding:9px 0;cursor:pointer;user-select:none;border-top:1px solid var(--gray3);margin-top:6px}
+.exc-head-label{font-size:.75rem;font-weight:700;color:#aaa}
+.exc-arrow{font-size:.65rem;color:#666;transition:.2s}
+.exc-collapsible-head.open .exc-arrow{transform:rotate(180deg)}
+.exc-body{overflow:hidden;max-height:0;transition:max-height .35s ease}
+.exc-body.open{max-height:600px}
+.exc-tabs{display:flex;gap:4px;margin-bottom:10px}
+.exc-tab{flex:1;padding:7px;background:var(--gray3);color:#888;border:none;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:.15s}
+.exc-tab.active{background:var(--yellow);color:var(--black)}
+/* 属性除外ボタン群 */
+.attr-exc-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--gray3)}
+.attr-exc-btn{background:var(--gray3);color:#888;border:1.5px solid transparent;padding:5px 8px;border-radius:6px;font-size:.7rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:.15s;display:flex;align-items:center;gap:3px}
+.attr-exc-btn.active{color:#fff;border-color:currentColor}
+.exc-list{display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:210px;overflow-y:auto}
+.exc-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--gray3);border-radius:6px;cursor:pointer;border:1.5px solid transparent;transition:.15s;font-size:.72rem;user-select:none}
+.exc-item.excluded{border-color:var(--red);background:#2a0a0a;color:#ff6666}
+.exc-item .exc-check{width:14px;height:14px;border-radius:3px;border:1.5px solid #555;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;transition:.15s}
+.exc-item.excluded .exc-check{background:var(--red);border-color:var(--red);color:#fff}
+.exc-clear{width:100%;margin-top:8px;padding:7px;background:transparent;color:#888;border:1px solid #444;border-radius:6px;font-size:.72rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:.15s}
+.exc-clear:hover{color:var(--red);border-color:var(--red)}
+
+/* 属性表示モード切り替えボタン */
+.attr-mode-wrap{display:flex;gap:0;margin-top:4px;border-radius:7px;overflow:hidden;border:1px solid #444}
+.attr-mode-btn{flex:1;padding:7px 4px;background:var(--gray3);color:#888;border:none;font-size:.68rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:.15s;border-right:1px solid #444}
+.attr-mode-btn:last-child{border-right:none}
+.attr-mode-btn.active{background:var(--yellow);color:var(--black)}
+
+/* 属性文字色 */
+.arm-name.attr-fire{color:#ff4444}
+.arm-name.attr-ice{color:#44ccff}
+.arm-name.attr-blind{color:#888888}
+.arm-name.attr-none{color:#f5f5f5}
+.arm-name.attr-wind{color:#44dd88}
+.arm-name.attr-explosion{color:#ff8800}
+.arm-name.attr-thunder{color:#4488ff}
+.arm-name.attr-shock{color:#ffdd00}
+.arm-name.attr-poison{color:#aa44ff}
+
+/* RESULT GRID */
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.p-card{background:var(--gray);border:1px solid var(--gray3);border-radius:14px;overflow:hidden;min-height:220px}
+.p-card-head{background:var(--gray2);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray3)}
+.p-name{font-size:.78rem;font-weight:700;color:var(--yellow);outline:none;min-width:20px;max-width:100px;white-space:nowrap;overflow:hidden}
+.p-edit{font-size:.7rem;cursor:pointer;opacity:.7}
+.p-body{padding:10px 12px}
+.char-name{font-size:.85rem;font-weight:900;color:var(--yellow);display:block;margin-bottom:8px;border-bottom:1px solid var(--gray3);padding-bottom:6px;font-family:'Black Ops One',cursive;letter-spacing:.02em}
+.arm-item{padding:5px 0;border-bottom:1px dotted var(--gray3)}
+.arm-item:last-child{border-bottom:none}
+.arm-coord{font-size:1.2rem;font-weight:900;color:var(--white);font-family:'Black Ops One',cursive;line-height:1}
+.arm-name{font-size:.72rem;color:var(--yellow);font-weight:700;margin-top:2px;display:block}
+.special-label{display:inline-block;background:var(--red);color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:4px;margin-bottom:8px;font-family:'Black Ops One',cursive}
+
+/* BUTTONS */
+.btn-draw{width:100%;padding:18px;background:var(--yellow);color:var(--black);border:none;border-radius:12px;font-family:'Black Ops One',cursive;font-size:1.8rem;letter-spacing:.4em;cursor:pointer;position:relative;overflow:hidden;transition:.15s;box-shadow:0 4px 0 #b8a000,0 6px 20px rgba(255,222,0,.2)}
+.btn-draw:active{transform:translateY(3px);box-shadow:0 1px 0 #b8a000}
+.btn-draw::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,transparent 50%)}
+.btn-draw:disabled{opacity:.5;pointer-events:none}
+.btn-copy{width:100%;padding:13px;background:transparent;color:var(--white);border:1.5px solid var(--gray3);border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;transition:.15s;font-family:'Noto Sans JP',sans-serif}
+.btn-copy:hover{border-color:#555;background:var(--gray2)}
+.btn-copy:active{transform:scale(.98)}
+.btn-save{width:100%;padding:13px;background:var(--gray2);color:var(--white);border:1.5px solid var(--gray3);border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;transition:.15s;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-save:hover{border-color:#555;background:var(--gray3)}
+.btn-save:active{transform:scale(.98)}
+#msg{text-align:center;font-size:.75rem;font-weight:700;height:1.2rem;color:var(--yellow);transition:opacity .3s}
+
+/* RESULT ANIMATIONS */
+@keyframes revealSlide{0%{opacity:0;transform:translateY(10px) scale(.95)}60%{transform:translateY(-2px) scale(1.01)}100%{opacity:1;transform:none}}
+@keyframes charReveal{0%{letter-spacing:.3em;opacity:0;transform:scale(1.08)}100%{letter-spacing:.02em;opacity:1;transform:scale(1)}}
+@keyframes borderGlow{0%,100%{border-color:var(--gray3);box-shadow:none}50%{border-color:var(--yellow);box-shadow:0 0 16px rgba(255,222,0,.25)}}
+.arm-item.reveal{animation:revealSlide .38s cubic-bezier(.22,1,.36,1) both}
+.char-name.reveal{animation:charReveal .35s cubic-bezier(.22,1,.36,1) both}
+.p-card.glow{animation:borderGlow .6s ease 3}
+
+/* INFO */
+details{background:var(--gray);border:1px solid var(--gray3);border-radius:12px;overflow:hidden}
+summary{padding:11px 14px;cursor:pointer;font-size:.75rem;font-weight:700;color:#888;list-style:none;display:flex;justify-content:space-between;align-items:center}
+summary::after{content:'▼';font-size:.6rem}
+details[open] summary::after{content:'▲'}
+.info-body{padding:12px 14px;border-top:1px solid var(--gray3);font-size:.72rem;line-height:1.7;color:#aaa}
+.info-body b{color:var(--yellow);display:block;margin:8px 0 3px}
+
+/* PWA */
+#pwa-banner{display:none;background:var(--gray2);border:1px solid var(--gray3);border-radius:10px;padding:10px 14px;flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
+#pwa-banner span{font-size:.72rem;color:#ccc;flex:1}
+#pwa-install{background:var(--yellow);color:var(--black);border:none;border-radius:6px;padding:7px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;flex-shrink:0}
+#shareCanvas{display:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--gray2)}
+::-webkit-scrollbar-thumb{background:#444;border-radius:4px}
+
+/* ══════════════════════════════════
+   SLOT OVERLAY — 全画面本格スロット
+══════════════════════════════════ */
+#slot-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:#050505;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#slot-overlay.active{display:flex}
+
+/* 背景グリッドライン */
+#slot-overlay::before{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(255,222,0,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,222,0,.04) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+/* 上部グロー（常に画面上部固定） */
+#slot-overlay::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:40%;
+  background:linear-gradient(180deg,rgba(30,20,0,.9) 0%,transparent 100%);
+  pointer-events:none;z-index:0;
+}
+
+/* パーティクル */
+#particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:10}
+@keyframes particleFall{0%{transform:translateY(-30px) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(110vh) rotate(900deg) scale(.3);opacity:0}}
+.particle{position:absolute;top:0;animation:particleFall linear both}
+
+/* ── フェーズ共通ラッパー ── */
+.slot-phase{
+  position:absolute;inset:0;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  z-index:1;
+}
+.slot-phase.active{display:flex}
+
+/* ── Phase 0: アナウンス ── */
+#phase-announce{gap:12px}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+.announce-label{
+  font-family:'Black Ops One',cursive;font-size:.75rem;letter-spacing:.3em;
+  color:#555;text-transform:uppercase;
+}
+@keyframes announceIn{0%{opacity:0;transform:scale(.6) translateY(16px)}60%{transform:scale(1.04)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes announceOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15) translateY(-12px)}}
+.announce-name{
+  font-family:'Black Ops One',cursive;font-size:2.4rem;
+  background:linear-gradient(135deg,#ffde00,#fff8a0,#ffde00);
+  background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 1.5s linear infinite;
+  letter-spacing:.04em;text-align:center;line-height:1.1;
+  max-width:90vw;word-break:break-all;
+}
+.announce-sub{
+  font-family:'Black Ops One',cursive;font-size:1rem;
+  color:var(--red);letter-spacing:.22em;
+  text-shadow:0 0 20px rgba(255,45,45,.6);
+}
+.announce-in{animation:announceIn .45s cubic-bezier(.22,1,.36,1) both}
+.announce-out{animation:announceOut .3s ease both}
+
+/* START スプラッシュ */
+@keyframes startSplash{
+  0%{opacity:0;transform:scale(2.2) rotate(-4deg)}
+  25%{opacity:1;transform:scale(.92) rotate(1deg)}
+  65%{transform:scale(1) rotate(0deg);opacity:1}
+  100%{opacity:0;transform:scale(1.1)}
+}
+#start-splash{
+  position:absolute;inset:0;z-index:30;
+  display:none;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#start-splash.show{display:flex}
+.start-splash-text{
+  font-family:'Black Ops One',cursive;font-size:5.5rem;
+  color:var(--red);
+  text-shadow:0 0 50px rgba(255,45,45,.9),0 0 100px rgba(255,45,45,.4);
+  letter-spacing:.12em;
+  animation:startSplash .9s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Phase 1: カウントダウン ── */
+#phase-cd{gap:0}
+#cd-wrap{position:relative;height:140px;width:140px;display:flex;align-items:center;justify-content:center}
+@keyframes cdPop{0%{transform:scale(2.6);opacity:0}22%{transform:scale(.85);opacity:1}65%{transform:scale(1);opacity:1}100%{transform:scale(.3);opacity:0}}
+.cd-num{
+  font-family:'Black Ops One',cursive;font-size:8rem;color:var(--yellow);
+  text-shadow:0 0 50px rgba(255,222,0,.9),0 0 100px rgba(255,222,0,.4);
+  animation:cdPop .88s cubic-bezier(.22,1,.36,1) both;
+  position:absolute;line-height:1;
+}
+.cd-ring{
+  position:absolute;inset:-10px;border-radius:50%;
+  border:2px solid rgba(255,222,0,.15);
+  animation:cdPop .88s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Phase 2: スロットマシン ── */
+#phase-slot{width:100%;justify-content:center;padding:0}
+
+/* プレイヤーヘッダー */
+.slot-player-header{
+  width:100%;padding:14px 20px 10px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  flex-shrink:0;
+}
+.slot-player-name{
+  font-family:'Black Ops One',cursive;font-size:1.3rem;color:var(--yellow);
+  letter-spacing:.06em;text-shadow:0 0 20px rgba(255,222,0,.4);
+}
+.slot-player-badge{
+  font-family:'Black Ops One',cursive;font-size:.6rem;letter-spacing:.15em;
+  color:#555;border:1px solid #333;padding:3px 8px;border-radius:3px;
+}
+
+/* スロット筐体 */
+.slot-machine{
+  width:92%;max-width:360px;
+  background:linear-gradient(180deg,#1a1a1a 0%,#111 100%);
+  border:2px solid #333;border-radius:16px;
+  overflow:hidden;flex-shrink:0;
+  box-shadow:0 0 40px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* キャラ表示エリア */
+.slot-char-section{
+  background:#0d0d0d;padding:10px 16px 8px;
+  border-bottom:1px solid #222;
+  display:flex;align-items:center;gap:10px;
+}
+.slot-char-label{font-size:.6rem;font-weight:700;letter-spacing:.15em;color:#444;flex-shrink:0;text-transform:uppercase;font-family:'Black Ops One',cursive}
+.slot-char-window{flex:1;height:30px;overflow:hidden;position:relative}
+/* 上下グラデーションマスク */
+.slot-char-window::before,.slot-char-window::after{
+  content:'';position:absolute;left:0;right:0;height:8px;z-index:2;pointer-events:none;
+}
+.slot-char-window::before{top:0;background:linear-gradient(#0d0d0d,transparent)}
+.slot-char-window::after{bottom:0;background:linear-gradient(transparent,#0d0d0d)}
+.slot-char-drum{display:flex;flex-direction:column;will-change:transform}
+.slot-char-item{
+  height:30px;display:flex;align-items:center;
+  font-family:'Black Ops One',cursive;font-size:.92rem;
+  color:var(--yellow);white-space:nowrap;letter-spacing:.02em;
+}
+@keyframes charConfirm{
+  0%{color:var(--yellow);text-shadow:none}
+  30%{color:#fff;text-shadow:0 0 24px rgba(255,255,255,.9),0 0 8px rgba(255,222,0,.8)}
+  100%{color:var(--yellow);text-shadow:none}
+}
+.slot-char-item.confirmed{animation:charConfirm .7s ease both}
+
+/* リール群 */
+.slot-reels-wrap{padding:14px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.reel-row{display:flex;align-items:center;gap:8px}
+.reel-num{
+  font-family:'Black Ops One',cursive;font-size:.7rem;color:#333;
+  width:16px;text-align:center;flex-shrink:0;
+}
+/* リール本体 */
+.reel-body{
+  flex:1;height:52px;
+  background:#080808;border:1px solid #2a2a2a;border-radius:8px;
+  overflow:hidden;position:relative;
+}
+/* センターライン（当たり判定ライン風） */
+.reel-body::before,.reel-body::after{
+  content:'';position:absolute;left:0;right:0;z-index:3;pointer-events:none;
+}
+.reel-body::before{
+  top:0;height:16px;
+  background:linear-gradient(#080808,transparent);
+}
+.reel-body::after{
+  bottom:0;height:16px;
+  background:linear-gradient(transparent,#080808);
+}
+/* ハイライトライン */
+.reel-highlight{
+  position:absolute;top:50%;transform:translateY(-50%);
+  left:0;right:0;height:52px;pointer-events:none;z-index:1;
+  border-top:1px solid rgba(255,222,0,.12);
+  border-bottom:1px solid rgba(255,222,0,.12);
+  background:rgba(255,222,0,.02);
+}
+.reel-track{display:flex;flex-direction:column;will-change:transform;position:relative;z-index:2}
+.reel-item{
+  height:52px;display:flex;flex-direction:row;align-items:center;gap:8px;
+  padding:0 10px;
+}
+.reel-coord{
+  font-family:'Black Ops One',cursive;font-size:.82rem;color:#666;
+  line-height:1;letter-spacing:.04em;flex-shrink:0;min-width:28px;
+}
+.reel-name{
+  font-size:.82rem;font-weight:700;color:var(--yellow);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;
+}
+
+/* ロック時エフェクト */
+.reel-body.locked{border-color:rgba(255,222,0,.4);box-shadow:0 0 10px rgba(255,222,0,.15)}
+.reel-body.locked .reel-highlight{
+  border-color:rgba(255,222,0,.3);background:rgba(255,222,0,.05);
+}
+@keyframes lockFlash{0%{background:rgba(255,222,0,.3)}100%{background:rgba(255,222,0,.02)}}
+.reel-body.lock-flash{animation:lockFlash .25s ease}
+@keyframes bgLockFlash{0%{background-color:#1a1400}50%{background-color:#1a1400}100%{background-color:#050505}}
+#slot-overlay.bg-lock-flash{animation:bgLockFlash .6s ease}
+
+/* 座標バッジ（リール右） */
+.reel-coord-badge{
+  font-family:'Black Ops One',cursive;font-size:.72rem;
+  color:#333;width:34px;text-align:center;flex-shrink:0;
+  transition:color .3s;
+}
+.reel-coord-badge.lit{color:var(--yellow);text-shadow:0 0 8px rgba(255,222,0,.5)}
+
+/* 筐体下部 */
+.slot-machine-footer{
+  padding:10px 14px 12px;background:#0d0d0d;border-top:1px solid #1a1a1a;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.slot-status{
+  font-family:'Black Ops One',cursive;font-size:.65rem;letter-spacing:.2em;
+  color:#333;transition:color .3s;
+}
+.slot-status.spinning{color:#ff6600;animation:statusBlink .4s step-end infinite}
+.slot-status.locked{color:var(--yellow)}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TAP TO CONTINUE */
+#phase-done{gap:20px}
+@keyframes doneIn{0%{opacity:0;transform:scale(.8) translateY(20px)}60%{transform:scale(1.03)}100%{opacity:1;transform:none}}
+.done-tap{
+  font-family:'Black Ops One',cursive;font-size:.85rem;letter-spacing:.22em;
+  color:#444;border:1px solid #2a2a2a;padding:12px 32px;border-radius:30px;
+  cursor:pointer;transition:color .2s,border-color .2s,box-shadow .2s;
+  animation:doneIn .5s cubic-bezier(.22,1,.36,1) .2s both;
+}
+.done-tap:hover{color:#888;border-color:#555;box-shadow:0 0 16px rgba(255,222,0,.08)}
+.done-result-preview{
+  display:flex;flex-direction:column;gap:4px;align-items:center;
+  animation:doneIn .5s cubic-bezier(.22,1,.36,1) both;
+}
+.done-player-name{
+  font-family:'Black Ops One',cursive;font-size:1rem;color:var(--yellow);
+  letter-spacing:.06em;
+}
+.done-arms-preview{font-size:.72rem;color:#666;letter-spacing:.05em}
+
+/* フラッシュ */
+@keyframes overlayFlash{0%{background-color:#1a1400}100%{background-color:#050505}}
+#slot-overlay.flash{animation:overlayFlash .4s ease}
+
+/* VS splash */
+#vs-splash{
+  position:absolute;inset:0;z-index:20;
+  display:none;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#vs-splash.show{display:flex}
+@keyframes vsSplash{0%{opacity:0;transform:scale(2.5)}40%{opacity:1;transform:scale(.95)}70%{transform:scale(1.02)}100%{opacity:0;transform:scale(1)}}
+.vs-text{
+  font-family:'Black Ops One',cursive;font-size:5rem;color:var(--red);
+  text-shadow:0 0 60px rgba(255,45,45,.8),0 0 120px rgba(255,45,45,.4);
+  animation:vsSplash 1.2s cubic-bezier(.22,1,.36,1) both;
+  letter-spacing:.1em;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ ARMS ROULETTE ⚡</h1>
+  <p>Random Arms &amp; Character Picker</p>
+</div>
+
+<div class="main">
+
+  <div id="pwa-banner">
+    <span>📲 ホーム画面に追加してオフラインでも使えます</span>
+    <button id="pwa-install" onclick="installPWA()">追加</button>
+  </div>
+
+  <!-- 3人対戦モード（独立パネル） -->
+  <div class="panel">
+    <div class="panel-head" id="p3Head" onclick="toggle3pPanel()">
+      <div class="panel-head-left"><div class="dot"></div>3人対戦モード</div>
+      <span class="panel-head-arrow">▼</span>
+    </div>
+    <div class="panel-collapse" id="p3Collapse">
+      <div class="panel-body">
+        <div class="toggle-row">
+          <div class="toggle-label">3人対戦モード<small>ペア選択でプレイヤー名を自動切替</small></div>
+          <label class="switch"><input type="checkbox" id="show3p" onchange="toggle3p()"><span class="slider"></span></label>
+        </div>
+        <div id="name-section">
+          <button class="name-toggle-btn" id="nameToggleBtn" onclick="toggleNameCollapse()">
+            <span id="nameToggleLabel">▸ 名前を入力する</span>
+            <span class="ntarrow">▼</span>
+          </button>
+          <div class="name-collapse" id="nameCollapse">
+            <div class="name-row">
+              <div class="name-inp-wrap"><span class="name-inp-label">P1</span><input class="name-inp" id="n1" placeholder="プレイヤー1" oninput="updMatch()"></div>
+              <div class="name-inp-wrap"><span class="name-inp-label">P2</span><input class="name-inp" id="n2" placeholder="プレイヤー2" oninput="updMatch()"></div>
+              <div class="name-inp-wrap"><span class="name-inp-label">P3</span><input class="name-inp" id="n3" placeholder="プレイヤー3" oninput="updMatch()"></div>
+            </div>
+          </div>
+          <div class="match-grid">
+            <button class="match-btn active" id="m12" onclick="setMatch(1,2,'m12')"><span id="v12a">P1</span><span class="vs">vs</span><span id="v12b">P2</span></button>
+            <button class="match-btn" id="m23" onclick="setMatch(2,3,'m23')"><span id="v23a">P2</span><span class="vs">vs</span><span id="v23b">P3</span></button>
+            <button class="match-btn" id="m13" onclick="setMatch(1,3,'m13')"><span id="v13a">P1</span><span class="vs">vs</span><span id="v13b">P3</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- オプション（折りたたみ） -->
+  <div class="panel">
+    <div class="panel-head" id="optHead" onclick="toggleOptions()">
+      <div class="panel-head-left"><div class="dot"></div>OPTIONS</div>
+      <span class="panel-head-arrow">▼</span>
+    </div>
+    <div class="panel-collapse" id="optCollapse">
+      <div class="panel-body">
+        <div class="toggle-row">
+          <div class="toggle-label">「全アーム統一」を含める<small>約6%の確率で特殊モード発生</small></div>
+          <label class="switch"><input type="checkbox" id="i43"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">キャラ名を表示しない</div>
+          <label class="switch"><input type="checkbox" id="hC"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">演出をスキップ<small>即結果表示（連戦時など）</small></div>
+          <label class="switch"><input type="checkbox" id="skipAnim"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="toggle-label">属性の表示方法<small>アーム名の属性をどう見せるか</small></div>
+          <div class="attr-mode-wrap" style="width:100%">
+            <button class="attr-mode-btn" id="attrEmoji" onclick="setAttrMode('emoji')">絵文字</button>
+            <button class="attr-mode-btn active" id="attrColor" onclick="setAttrMode('color')">文字色</button>
+            <button class="attr-mode-btn" id="attrNone" onclick="setAttrMode('off')">非表示</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">除外設定を使う<small>特定のキャラ・アームを抽選から外す</small></div>
+          <label class="switch"><input type="checkbox" id="useExc" onchange="toggleExc()"><span class="slider"></span></label>
+        </div>
+        <div id="exc-section" style="display:none">
+          <div class="exc-collapsible-head" id="exc-head" onclick="toggleExcBody()">
+            <span class="exc-head-label">除外リストを編集する</span>
+            <span class="exc-arrow">▼</span>
+          </div>
+          <div class="exc-body" id="exc-body">
+            <div style="padding-bottom:10px">
+              <div class="exc-tabs">
+                <button class="exc-tab active" id="tab-char" onclick="showExcTab('char')">キャラクター</button>
+                <button class="exc-tab" id="tab-arm" onclick="showExcTab('arm')">アーム</button>
+              </div>
+              <div class="exc-list" id="exc-list-char"></div>
+              <div id="exc-arm-wrap" style="display:none">
+                <div class="attr-exc-wrap" id="attr-exc-btns"></div>
+                <div class="exc-list" id="exc-list-arm"></div>
+              </div>
+              <button class="exc-clear" onclick="clearExc()">除外をリセット</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 結果エリア -->
+  <div class="result-grid">
+    <div class="p-card" id="cardA">
+      <div class="p-card-head">
+        <div class="p-name" id="labA" contenteditable="true">プレイヤー1</div>
+        <span class="p-edit" id="editA">✏️</span>
+      </div>
+      <div class="p-body"><div id="cA"></div><div id="rA"></div></div>
+    </div>
+    <div class="p-card" id="cardB">
+      <div class="p-card-head">
+        <div class="p-name" id="labB" contenteditable="true">プレイヤー2</div>
+        <span class="p-edit" id="editB">✏️</span>
+      </div>
+      <div class="p-body"><div id="cB"></div><div id="rB"></div></div>
+    </div>
+  </div>
+
+  <button class="btn-draw" id="btn-draw" onclick="drawWithSlot()">START</button>
+  <button class="btn-save" onclick="saveCard()">🖼️ 画像をクリップボードにコピー</button>
+  <button class="btn-copy" onclick="cp()">📋 テキストでコピー</button>
+  <div id="msg"></div>
+
+  <details>
+    <summary>使い方 &amp; 機能説明</summary>
+    <div class="info-body">
+      <b>基本操作</b>
+      「抽選スタート」でスロット演出が始まり、タップで結果を確定します。<br>
+      プレイヤー名は ✏️ または直接タップして編集できます。
+      <b>カード保存</b>
+      「カード画像として保存」で結果をPNG画像としてダウンロード。そのままSNSやLINEで共有できます。
+      <b>除外設定</b>
+      「除外設定を使う」をONにすると、特定のキャラやアームを抽選から外せます。
+      <b>全アーム統一</b>
+      約6%の確率で3スロットすべてが同じアームになる特殊モード。
+      <b>3人対戦モード</b>
+      名前入力は折りたたみ可能。対戦カードは常時表示でペアを選ぶと名前が自動反映されます。
+      <b>オフライン対応（PWA）</b>
+      ホーム画面に追加するとアプリとして使用可能。Wi-Fiがなくても動きます。
+    </div>
+  </details>
+
+</div>
+
+<!-- スロット演出オーバーレイ -->
+<div id="slot-overlay">
+  <div id="particles"></div>
+
+  <!-- VS splash -->
+  <div id="vs-splash"><div class="vs-text">VS</div></div>
+  <div id="start-splash"></div>
+
+  <!-- Phase 0: アナウンス -->
+  <div class="slot-phase" id="phase-announce">
+    <div class="announce-label">NEXT PLAYER</div>
+    <div class="announce-name" id="announce-name">???</div>
+    <div class="announce-sub" id="announce-sub">SELECTION START!</div>
+  </div>
+
+  <!-- Phase 1: カウントダウン -->
+  <div class="slot-phase" id="phase-cd">
+    <div id="cd-wrap"></div>
+  </div>
+
+  <!-- Phase 2: スロットマシン -->
+  <div class="slot-phase" id="phase-slot">
+    <div class="slot-player-header">
+      <div class="slot-player-badge">NOW SELECTING</div>
+      <div class="slot-player-name" id="slot-pname">???</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;padding:0 14px">
+      <div class="slot-machine">
+        <!-- キャラリール -->
+        <div class="slot-char-section">
+          <div class="slot-char-label">FIGHTER</div>
+          <div class="slot-char-window">
+            <div class="slot-char-drum" id="so-char-drum"><div class="slot-char-item">— — —</div></div>
+          </div>
+        </div>
+        <!-- アームリール3本 -->
+        <div class="slot-reels-wrap">
+          <div class="reel-row">
+            <div class="reel-num">1</div>
+            <div class="reel-body" id="reel-0"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-0">--</div>
+          </div>
+          <div class="reel-row">
+            <div class="reel-num">2</div>
+            <div class="reel-body" id="reel-1"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-1">--</div>
+          </div>
+          <div class="reel-row">
+            <div class="reel-num">3</div>
+            <div class="reel-body" id="reel-2"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-2">--</div>
+          </div>
+        </div>
+        <div class="slot-machine-footer">
+          <div class="slot-status" id="slot-status">READY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3: 完了 -->
+  <div class="slot-phase" id="phase-done">
+    <div class="done-result-preview" id="done-preview"></div>
+    <div class="done-tap" id="done-tap">TAP TO CONTINUE</div>
+  </div>
+</div>
+
+<canvas id="shareCanvas"></canvas>
+<textarea id="temp-area" style="position:absolute;left:-9999px"></textarea>
+
+<script>
+const chars=["スプリングマン","リボンガール","ニンジャラ","マスターマミー","ミェンミェン","メカニッカ","ツインテーラ","バイト＆バーク","キッドコブラ","DNAマン","マックスブラス","ローラポップ","ミサンゴ","スプリングトロン","ドクターコイル"];
+
+// アーム定義：名前・絵文字・属性クラス
+const armsData=[
+  {n:"トースター",e:"🔥",a:"fire"},{n:"スパーキー",e:"⚡",a:"thunder"},{n:"チャクラム",e:"⚠️",a:"shock"},
+  {n:"ビッグパンチ",e:"🈚",a:"none"},{n:"ドラゴン",e:"🔥",a:"fire"},{n:"エクスブロー",e:"💥",a:"explosion"},
+  {n:"スコルピオ",e:"💀",a:"poison"},{n:"ブーメラン",e:"🍃",a:"wind"},{n:"ポップスター",e:"🍃",a:"wind"},
+  {n:"プレッシャー",e:"🈚",a:"none"},{n:"オートカノン",e:"🔥",a:"fire"},{n:"メガボルト",e:"⚡",a:"thunder"},
+  {n:"ロースター",e:"🔥",a:"fire"},{n:"イルイル",e:"💀",a:"poison"},{n:"トライデント",e:"⚠️",a:"shock"},
+  {n:"サラマンダー",e:"🔥",a:"fire"},{n:"トリプルボム",e:"💥",a:"explosion"},{n:"フェニックス",e:"🔥",a:"fire"},
+  {n:"ホットリング",e:"🔥",a:"fire"},{n:"ニトロハンマー",e:"💥",a:"explosion"},{n:"スカリー",e:"💀",a:"poison"},
+  {n:"リボルバー",e:"⚡",a:"thunder"},{n:"フリーザー",e:"🧊",a:"ice"},{n:"チェイサー",e:"⚡",a:"thunder"},
+  {n:"オロチ",e:"🍃",a:"wind"},{n:"ゲルゲル",e:"🚫",a:"blind"},{n:"ヌンチャク",e:"⚠️",a:"shock"},
+  {n:"ハンドロック",e:"🔥",a:"fire"},{n:"ヘビィハンマー",e:"⚠️",a:"shock"},{n:"パラソル",e:"🍃",a:"wind"},
+  {n:"ギャラクシー",e:"🔥",a:"fire"},{n:"バーチカル",e:"🔥",a:"fire"},{n:"レイドラ",e:"🧊",a:"ice"},
+  {n:"ジョーカー",e:"🚫",a:"blind"},{n:"パラライザ",e:"⚡",a:"thunder"},{n:"ロックオン",e:"💥",a:"explosion"},
+  {n:"サンダーバード",e:"⚡",a:"thunder"},{n:"バルーナー",e:"🈚",a:"none"},{n:"アイスエッジ",e:"🧊",a:"ice"},
+  {n:"ファランクス",e:"⚡",a:"thunder"},{n:"キックバック",e:"🈚",a:"none"},{n:"ヒュンチャク",e:"🧊",a:"ice"}
+];
+
+// 属性定義
+const attrDefs=[
+  {a:"fire",   e:"🔥",label:"炎",   color:"#ff4444"},
+  {a:"ice",    e:"🧊",label:"氷",   color:"#44ccff"},
+  {a:"blind",  e:"🚫",label:"ブラインド",color:"#888888"},
+  {a:"none",   e:"🈚",label:"無属性",color:"#f5f5f5"},
+  {a:"wind",   e:"🍃",label:"風",   color:"#44dd88"},
+  {a:"explosion",e:"💥",label:"爆発",color:"#ff8800"},
+  {a:"thunder",e:"⚡",label:"雷",   color:"#4488ff"},
+  {a:"shock",  e:"⚠️",label:"ショック",color:"#ffdd00"},
+  {a:"poison", e:"💀",label:"毒",   color:"#aa44ff"},
+];
+
+// 属性表示モード（デフォルト: color）
+let attrMode='color';
+
+// 除外された属性セット
+const excludedAttrs=new Set();
+
+// アーム名文字列を生成（モードに応じて）
+function armDisplay(ad){
+  if(attrMode==='emoji') return ad.n+' '+ad.e;
+  if(attrMode==='color') return ad.n;
+  return ad.n; // off も名前だけ
+}
+// アームのCSSクラスを返す
+function armClass(ad){
+  if(attrMode==='color') return 'arm-name attr-'+ad.a;
+  return 'arm-name';
+}
+
+// 抽選対象アームプール（文字列ではなくindexで管理）
+const excludedChars=new Set(), excludedArms=new Set();
+let copyText="", deferredPrompt=null, isDrawing=false;
+
+// ── PWA ──
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('pwa-banner').style.display='flex';});
+function installPWA(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('pwa-banner').style.display='none';});}
+
+// ── OPTIONS 折りたたみ ──
+function toggleOptions(){
+  const head=document.getElementById('optHead');
+  const col=document.getElementById('optCollapse');
+  const open=col.classList.toggle('open');
+  head.classList.toggle('open',open);
+}
+function toggle3pPanel(){
+  const head=document.getElementById('p3Head');
+  const col=document.getElementById('p3Collapse');
+  const open=col.classList.toggle('open');
+  head.classList.toggle('open',open);
+}
+
+// ── 3P MODE ──
+function toggle3p(){
+  const on=document.getElementById('show3p').checked;
+  document.getElementById('name-section').style.display=on?'block':'none';
+  ['editA','editB'].forEach(id=>document.getElementById(id).style.display=on?'none':'inline');
+  if(on)updMatch();
+}
+function toggleNameCollapse(){
+  const col=document.getElementById('nameCollapse');
+  const btn=document.getElementById('nameToggleBtn');
+  const lbl=document.getElementById('nameToggleLabel');
+  const open=col.classList.toggle('open');
+  btn.classList.toggle('open',open);
+  lbl.textContent=open?'▾ 名前を編集中':'▸ 名前を入力する';
+}
+function updMatch(){
+  const v1=document.getElementById('n1').value||"P1";
+  const v2=document.getElementById('n2').value||"P2";
+  const v3=document.getElementById('n3').value||"P3";
+  document.getElementById('v12a').textContent=v1;document.getElementById('v12b').textContent=v2;
+  document.getElementById('v23a').textContent=v2;document.getElementById('v23b').textContent=v3;
+  document.getElementById('v13a').textContent=v1;document.getElementById('v13b').textContent=v3;
+  const active=document.querySelector('.match-btn.active');
+  if(active)active.click();
+}
+function setMatch(a,b,btnId){
+  document.getElementById('labA').textContent=document.getElementById('n'+a).value||"P"+a;
+  document.getElementById('labB').textContent=document.getElementById('n'+b).value||"P"+b;
+  document.querySelectorAll('.match-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById(btnId).classList.add('active');
+}
+
+// ── 属性モード ──
+function setAttrMode(mode){
+  attrMode=mode;
+  ['emoji','color','off'].forEach(m=>{
+    document.getElementById('attr'+m.charAt(0).toUpperCase()+m.slice(1))?.classList.toggle('active',m===mode);
+  });
+  // attrNoneだけIDが違うので対応
+  document.getElementById('attrEmoji').classList.toggle('active',mode==='emoji');
+  document.getElementById('attrColor').classList.toggle('active',mode==='color');
+  document.getElementById('attrNone').classList.toggle('active',mode==='off');
+  // 結果表示中なら再描画
+  if(document.getElementById('rA').innerHTML) refreshArmDisplay();
+}
+function refreshArmDisplay(){
+  ['A','B'].forEach(s=>{
+    document.getElementById('r'+s).querySelectorAll('.arm-item').forEach(item=>{
+      const nameEl=item.querySelector('.arm-name');
+      if(!nameEl)return;
+      const txt=nameEl.textContent;
+      const ad=armsData.find(a=>nameEl.textContent.replace(/\s*[🔥⚡⚠️🈚💥💀🍃🧊🚫]/gu,'').trim()===a.n||nameEl.textContent===a.n);
+      if(!ad)return;
+      nameEl.textContent=armDisplay(ad);
+      nameEl.className=armClass(ad);
+    });
+  });
+}
+
+// ── EXCLUDE ──
+function toggleExc(){
+  const on=document.getElementById('useExc').checked;
+  document.getElementById('exc-section').style.display=on?'block':'none';
+  if(on){buildExcLists();document.getElementById('exc-head').classList.add('open');document.getElementById('exc-body').classList.add('open');}
+}
+function toggleExcBody(){
+  document.getElementById('exc-head').classList.toggle('open');
+  document.getElementById('exc-body').classList.toggle('open');
+}
+function buildExcLists(){
+  // キャラ
+  const lc=document.getElementById('exc-list-char');
+  lc.innerHTML='';
+  chars.forEach(c=>lc.appendChild(makeExcItem(c,excludedChars)));
+  // 属性ボタン
+  const attrWrap=document.getElementById('attr-exc-btns');
+  attrWrap.innerHTML='';
+  attrDefs.forEach(def=>{
+    const btn=document.createElement('button');
+    btn.className='attr-exc-btn'+(excludedAttrs.has(def.a)?' active':'');
+    btn.style.color=def.color;
+    btn.innerHTML=`${def.e} ${def.label}`;
+    btn.onclick=()=>toggleAttrExclude(def,btn);
+    attrWrap.appendChild(btn);
+  });
+  // アーム個別
+  buildArmExcList();
+}
+function toggleAttrExclude(def,btn){
+  if(excludedAttrs.has(def.a)){
+    excludedAttrs.delete(def.a);
+    btn.classList.remove('active');
+    // その属性のアームを除外解除
+    armsData.forEach((ad,i)=>{if(ad.a===def.a)excludedArms.delete(i);});
+  }else{
+    excludedAttrs.add(def.a);
+    btn.classList.add('active');
+    // その属性のアームを全除外
+    armsData.forEach((ad,i)=>{if(ad.a===def.a)excludedArms.add(i);});
+  }
+  buildArmExcList();
+}
+function buildArmExcList(){
+  const la=document.getElementById('exc-list-arm');
+  la.innerHTML='';
+  armsData.forEach((ad,i)=>la.appendChild(makeArmExcItem(ad,i)));
+}
+function makeArmExcItem(ad,idx){
+  const el=document.createElement('div');
+  el.className='exc-item'+(excludedArms.has(idx)?' excluded':'');
+  el.innerHTML=`<div class="exc-check">${excludedArms.has(idx)?'✕':''}</div><span>${ad.n} ${ad.e}</span>`;
+  el.onclick=()=>{
+    if(excludedArms.has(idx)){excludedArms.delete(idx);el.classList.remove('excluded');el.querySelector('.exc-check').textContent='';}
+    else{excludedArms.add(idx);el.classList.add('excluded');el.querySelector('.exc-check').textContent='✕';}
+  };
+  return el;
+}
+function makeExcItem(name,set){
+  const el=document.createElement('div');
+  el.className='exc-item'+(set.has(name)?' excluded':'');
+  el.innerHTML=`<div class="exc-check">${set.has(name)?'✕':''}</div><span>${name}</span>`;
+  el.onclick=()=>{
+    if(set.has(name)){set.delete(name);el.classList.remove('excluded');el.querySelector('.exc-check').textContent='';}
+    else{set.add(name);el.classList.add('excluded');el.querySelector('.exc-check').textContent='✕';}
+  };
+  return el;
+}
+function showExcTab(t){
+  document.getElementById('tab-char').classList.toggle('active',t==='char');
+  document.getElementById('tab-arm').classList.toggle('active',t==='arm');
+  document.getElementById('exc-list-char').style.display=t==='char'?'grid':'none';
+  document.getElementById('exc-arm-wrap').style.display=t==='arm'?'block':'none';
+}
+function clearExc(){
+  excludedChars.clear();excludedArms.clear();excludedAttrs.clear();
+  buildExcLists();showMsg('除外リセット完了');
+}
+
+// ── RANDOM ──
+function randChar(){const pool=chars.filter(c=>!excludedChars.has(c));return(pool.length?pool:chars)[Math.floor(Math.random()*(pool.length||chars.length))];}
+function randArmN(){
+  const pool=armsData.map((_,i)=>i).filter(i=>!excludedArms.has(i));
+  const src=pool.length?pool:armsData.map((_,i)=>i);
+  const idx=src[Math.floor(Math.random()*src.length)];
+  const ad=armsData[idx];
+  const co=Math.ceil((idx+1)/7)+"-"+((idx%7)+1);
+  return{co,ar:armDisplay(ad),ad,idx};
+}
+
+// ── UTILS ──
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── フェーズ切り替え ──
+function showPhase(id){
+  document.querySelectorAll('.slot-phase').forEach(p=>p.classList.remove('active'));
+  if(id) document.getElementById(id).classList.add('active');
+}
+
+// ── アナウンス ──
+function runAnnounce(name){
+  return new Promise(res=>{
+    showPhase('phase-announce');
+    const nameEl=document.getElementById('announce-name');
+    const subEl=document.getElementById('announce-sub');
+    nameEl.textContent=name;
+    nameEl.className='announce-name announce-in';
+    subEl.className='announce-sub announce-in';
+    subEl.style.animationDelay='.18s';
+    setTimeout(()=>{
+      nameEl.className='announce-name announce-out';
+      subEl.className='announce-sub announce-out';
+      setTimeout(res,320);
+    },1200);
+  });
+}
+
+// ── カウントダウン ──
+function runCountdown(){
+  return new Promise(res=>{
+    showPhase('phase-cd');
+    const wrap=document.getElementById('cd-wrap');
+    let n=3;
+    const step=()=>{
+      if(n===0){wrap.innerHTML='';res();return;}
+      wrap.innerHTML=`<div class="cd-num">${n}</div>`;
+      n--;setTimeout(step,900);
+    };
+    step();
+  });
+}
+
+// ── キャラドラム ──
+function buildCharDrum(finalName){
+  const drum=document.getElementById('so-char-drum');
+  const pool=chars.filter(c=>!excludedChars.has(c));
+  const src=pool.length?pool:chars;
+  const items=[...src,...src,...src,...src].sort(()=>Math.random()-.5).slice(0,45);
+  items.push(finalName);
+  drum.innerHTML='';
+  drum.style.cssText='transition:none;transform:translateY(0)';
+  items.forEach(txt=>{
+    const d=document.createElement('div');d.className='slot-char-item';d.textContent=txt;drum.appendChild(d);
+  });
+  return drum;
+}
+
+// ── アームリール構築 ──
+function buildReel(reelIdx, finalArm){
+  const body=document.getElementById(`reel-${reelIdx}`);
+  const track=body.querySelector('.reel-track');
+  const pool=armsData.map((_,i)=>i).filter(i=>!excludedArms.has(i));
+  const src=pool.length?pool:armsData.map((_,i)=>i);
+  const items=[...src,...src,...src,...src,...src].sort(()=>Math.random()-.5).slice(0,60);
+  items.push(finalArm.idx);
+  track.innerHTML='';
+  track.style.cssText='transition:none;transform:translateY(0)';
+  items.forEach(idx=>{
+    const ad=armsData[idx];
+    const co=Math.ceil((idx+1)/7)+"-"+((idx%7)+1);
+    const attrColor=attrDefs.find(d=>d.a===ad.a)?.color||'#ffde00';
+    const d=document.createElement('div');
+    d.className='reel-item';
+    d.innerHTML=`<div class="reel-coord">${co}</div><div class="reel-name" style="color:${attrColor}">${ad.n}</div>`;
+    track.appendChild(d);
+  });
+  return track;
+}
+
+// ── スピン ──
+function spinTrack(track, itemH, duration, delay){
+  return new Promise(res=>{
+    setTimeout(()=>{
+      void track.offsetHeight;
+      const stopAt=(track.children.length-1)*itemH;
+      // イージング：最初速く、最後じわっと止まる
+      track.style.transition=`transform ${duration}ms cubic-bezier(.02,.85,.12,1)`;
+      track.style.transform=`translateY(-${stopAt}px)`;
+      setTimeout(res, duration+60);
+    }, delay);
+  });
+}
+
+// ── 1プレイヤー分スロット演出 ──
+async function runPlayerSlot(result, hC){
+  const status=document.getElementById('slot-status');
+  document.getElementById('slot-pname').textContent=result.lab;
+
+  // リール初期化
+  for(let i=0;i<3;i++){
+    document.getElementById(`reel-${i}`).classList.remove('locked','lock-flash');
+    document.getElementById(`rbadge-${i}`).classList.remove('lit');
+    document.getElementById(`rbadge-${i}`).textContent='--';
+    document.getElementById(`reel-${i}`).querySelector('.reel-track').innerHTML='';
+  }
+  document.getElementById('so-char-drum').innerHTML='<div class="slot-char-item">— — —</div>';
+  document.getElementById('so-char-drum').style.cssText='transition:none;transform:translateY(0)';
+
+  showPhase('phase-slot');
+  await sleep(180);
+
+  // キャラスピン
+  status.textContent='SPINNING';status.className='slot-status spinning';
+  if(!hC){
+    const charDrum=buildCharDrum(result.ch);
+    await spinTrack(charDrum,30,2000+Math.random()*400,0);
+    // 確定した最後のアイテムに光り演出
+    const lastItem=charDrum.lastElementChild;
+    if(lastItem){lastItem.classList.remove('confirmed');void lastItem.offsetWidth;lastItem.classList.add('confirmed');}
+    // 背景も光らせる
+    const ovChar=document.getElementById('slot-overlay');
+    ovChar.classList.remove('bg-lock-flash');void ovChar.offsetWidth;ovChar.classList.add('bg-lock-flash');
+  }
+  await sleep(120);
+
+  // アームリール 1本ずつ止まる
+  for(let i=0;i<3;i++){
+    const reel=document.getElementById(`reel-${i}`);
+    const track=buildReel(i, result.armList[i]);
+    const dur = 1400 + i*600 + Math.random()*300;
+    await spinTrack(track, 52, dur, 0);
+    // ロック
+    reel.classList.add('locked');
+    void reel.offsetWidth;
+    reel.classList.add('lock-flash');
+    const ov=document.getElementById('slot-overlay');
+    ov.classList.remove('bg-lock-flash');
+    void ov.offsetWidth;
+    ov.classList.add('bg-lock-flash');
+    const badge=document.getElementById(`rbadge-${i}`);
+    badge.textContent=result.armList[i].co;
+    badge.classList.add('lit');
+    await sleep(260);
+  }
+
+  status.textContent='LOCKED';status.className='slot-status locked';
+  await sleep(200);
+}
+
+// ── パーティクル ──
+function spawnParticles(){
+  const c=document.getElementById('particles');c.innerHTML='';
+  ['#ffde00','#ff2d2d','#ffffff','#ffc200','#ff9966'].forEach(col=>{
+    for(let i=0;i<8;i++){
+      const p=document.createElement('div');p.className='particle';
+      const size=5+Math.random()*9;
+      p.style.cssText=`left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${col};border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.4+Math.random()*1.8}s;animation-delay:${Math.random()*.6}s`;
+      c.appendChild(p);
+    }
+  });
+  setTimeout(()=>c.innerHTML='',4000);
+}
+
+// ── START スプラッシュ ──
+function showStartSplash(){
+  return new Promise(res=>{
+    const el=document.getElementById('start-splash');
+    el.innerHTML='<div class="start-splash-text">START</div>';
+    el.classList.add('show');
+    setTimeout(()=>{el.classList.remove('show');el.innerHTML='';res();},900);
+  });
+}
+
+// ── VS スプラッシュ ──
+function showVsSplash(){
+  return new Promise(res=>{
+    const el=document.getElementById('vs-splash');
+    el.innerHTML='<div class="vs-text">VS</div>';
+    el.classList.add('show');
+    setTimeout(()=>{el.classList.remove('show');el.innerHTML='';res();},1300);
+  });
+}
+
+// ── MAIN DRAW ──
+async function drawWithSlot(){
+  if(isDrawing)return;
+  isDrawing=true;
+  document.getElementById('btn-draw').disabled=true;
+
+  const i43=document.getElementById('i43').checked;
+  const hC=document.getElementById('hC').checked;
+  const skip=document.getElementById('skipAnim').checked;
+  const labA=document.getElementById('labA').textContent;
+  const labB=document.getElementById('labB').textContent;
+
+  // 結果を1回だけ決定
+  const results=[];
+  [{ch:randChar(),lab:labA,side:'A'},{ch:randChar(),lab:labB,side:'B'}].forEach(p=>{
+    const special=i43&&Math.random()<0.061;
+    let armList=[];
+    if(special){const a=randArmN();armList=[a,a,a];}
+    else{for(let i=0;i<3;i++)armList.push(randArmN());}
+    results.push({...p,armList,special});
+  });
+
+  // スキップ
+  if(skip){
+    applyResults(results,hC);
+    document.getElementById('btn-draw').disabled=false;
+    isDrawing=false;
+    return;
+  }
+
+  // オーバーレイ起動
+  const ov=document.getElementById('slot-overlay');
+  ov.onclick=null;
+  ov.classList.add('active');
+  showPhase(null);
+  await sleep(80);
+
+  // ── P1 ──
+  await runAnnounce(labA);
+  await runCountdown();
+  await showStartSplash();
+  await sleep(60);
+  await runPlayerSlot(results[0], hC);
+
+  // VS スプラッシュ
+  spawnParticles();
+  ov.classList.add('flash');setTimeout(()=>ov.classList.remove('flash'),400);
+  await showVsSplash();
+  await sleep(100);
+
+  // ── P2 ──
+  await runAnnounce(labB);
+  await showStartSplash();
+  await sleep(60);
+  await runPlayerSlot(results[1], hC);
+
+  // フィナーレ
+  spawnParticles();
+  ov.classList.add('flash');setTimeout(()=>ov.classList.remove('flash'),400);
+  await sleep(300);
+
+  // 結果プレビュー表示してDone画面へ
+  const preview=document.getElementById('done-preview');
+  preview.innerHTML=results.map(r=>`
+    <div style="text-align:center;margin-bottom:6px">
+      <div class="done-player-name">${r.lab}</div>
+      <div class="done-arms-preview">${r.armList.map(a=>a.co+' '+a.ar).join(' / ')}</div>
+    </div>
+  `).join('<div style="font-family:Black Ops One,cursive;color:#ff2d2d;font-size:1rem;letter-spacing:.1em;margin:4px 0">VS</div>');
+  showPhase('phase-done');
+
+  document.getElementById('done-tap').onclick=()=>{
+    ov.classList.remove('active');
+    showPhase(null);
+    applyResults(results,hC);
+    document.getElementById('btn-draw').disabled=false;
+    isDrawing=false;
+  };
+}
+
+// ── 結果を画面に反映 ──
+function applyResults(results,hC){
+  let t1='',t2='';
+  results.forEach(r=>{
+    const cEl=document.getElementById('c'+r.side);
+    const rEl=document.getElementById('r'+r.side);
+    cEl.innerHTML='';rEl.innerHTML='';
+    if(!hC)cEl.innerHTML=`<span class="char-name reveal">${r.ch}</span>`;
+    if(r.special){
+      const{co,ar,ad}=r.armList[0];
+      const cls=armClass(ad);
+      const disp=armDisplay(ad);
+      rEl.innerHTML=`<span class="special-label">ALL SAME</span><div class="arm-item reveal"><div class="arm-coord">${co}</div><span class="${cls}">${disp}</span></div>`;
+      const line=(hC?r.lab:r.lab+": "+r.ch)+"\n【全アーム統一】\n"+co+" "+ad.n+" "+ad.e;
+      if(r.side==='A')t1=line;else t2=line;
+    }else{
+      const lines=[];
+      r.armList.forEach(({co,ar,ad},i)=>{
+        const cls=armClass(ad);
+        const disp=armDisplay(ad);
+        rEl.innerHTML+=`<div class="arm-item reveal" style="animation-delay:${.04+i*.1}s"><div class="arm-coord">${co}</div><span class="${cls}">${disp}</span></div>`;
+        lines.push(co+" "+ad.n+" "+ad.e);
+      });
+      const line=(hC?r.lab:r.lab+": "+r.ch)+"\n"+lines.join('\n');
+      if(r.side==='A')t1=line;else t2=line;
+    }
+  });
+  copyText=t1+"\n\n"+t2;
+  ['cardA','cardB'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('glow');void el.offsetWidth;el.classList.add('glow');
+  });
+}
+
+// ── COPY ──
+function cp(){
+  if(!copyText)return;
+  const ta=document.getElementById('temp-area');
+  ta.value=copyText;ta.select();document.execCommand('copy');
+  showMsg('コピーしました！');
+}
+
+// ── SAVE IMAGE → クリップボード ──
+async function saveCard(){
+  if(!document.getElementById('rA').innerHTML){showMsg('先に抽選してください');return;}
+  showMsg('画像を生成中...');
+  const W=720,H=460,PAD=24,R=18;
+  const canvas=document.getElementById('shareCanvas');
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // 背景
+  ctx.fillStyle='#080808';ctx.fillRect(0,0,W,H);
+  ctx.save();
+  for(let x=-H;x<W+H;x+=28){ctx.strokeStyle='rgba(255,222,0,.03)';ctx.lineWidth=14;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+H,H);ctx.stroke();}
+  ctx.restore();
+
+  // ヘッダー
+  const hg=ctx.createLinearGradient(0,0,W,0);hg.addColorStop(0,'#ffde00');hg.addColorStop(.5,'#ffe84d');hg.addColorStop(1,'#ffc200');
+  ctx.fillStyle=hg;ctx.beginPath();roundRect(ctx,0,0,W,64,0);ctx.fill();
+  ctx.fillStyle='#0a0a0a';ctx.font='bold 26px "Black Ops One",Impact,sans-serif';ctx.textAlign='center';ctx.fillText('⚡  ARMS ROULETTE  ⚡',W/2,42);
+  ctx.font='bold 10px "Noto Sans JP",sans-serif';ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillText('RANDOM CHARACTER & ARMS SELECTION',W/2,58);
+
+  const hC=document.getElementById('hC').checked;
+  const labA=document.getElementById('labA').textContent;
+  const labB=document.getElementById('labB').textContent;
+  const getA=id=>[...document.getElementById(id).querySelectorAll('.arm-item')].map(i=>({c:i.querySelector('.arm-coord').textContent,n:i.querySelector('.arm-name').textContent}));
+  const getCh=id=>{const e=document.getElementById(id).querySelector('.char-name');return e?e.textContent:'';};
+  const isSp=id=>!!document.getElementById(id).querySelector('.special-label');
+
+  const cardW=(W-PAD*3)/2;
+  [{lab:labA,ch:getCh('cA'),arms:getA('rA'),sp:isSp('rA'),x:PAD},
+   {lab:labB,ch:getCh('cB'),arms:getA('rB'),sp:isSp('rB'),x:PAD*2+cardW}].forEach(cd=>{
+    const cX=cd.x,cY=80,cW=cardW,cH=H-80-PAD;
+    // カード背景
+    ctx.fillStyle='#141414';ctx.beginPath();roundRect(ctx,cX,cY,cW,cH,R);ctx.fill();
+    // カードヘッダー
+    const chg=ctx.createLinearGradient(cX,cY,cX,cY+50);chg.addColorStop(0,'#222');chg.addColorStop(1,'#1a1a1a');
+    ctx.fillStyle=chg;ctx.beginPath();roundRect(ctx,cX,cY,cW,50,{tl:R,tr:R,bl:0,br:0});ctx.fill();
+    // プレイヤー名
+    ctx.fillStyle='#ffde00';ctx.font='bold 17px "Black Ops One",Impact,sans-serif';ctx.textAlign='left';ctx.fillText(cd.lab,cX+16,cY+33);
+    // セパレータ
+    ctx.strokeStyle='#2a2a2a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cX,cY+50);ctx.lineTo(cX+cW,cY+50);ctx.stroke();
+    let cy=cY+68;
+    // キャラ名
+    if(!hC&&cd.ch){
+      ctx.fillStyle='#ff2d2d';ctx.font='bold 15px "Black Ops One",Impact,sans-serif';ctx.fillText(cd.ch,cX+16,cy);
+      cy+=28;
+      ctx.strokeStyle='#222';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cX+16,cy-6);ctx.lineTo(cX+cW-16,cy-6);ctx.stroke();
+    }
+    if(cd.sp&&cd.arms[0]){
+      ctx.fillStyle='#ff2d2d';ctx.beginPath();roundRect(ctx,cX+16,cy,80,22,4);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='bold 10px Impact,sans-serif';ctx.textAlign='center';ctx.fillText('ALL SAME',cX+56,cy+15);
+      ctx.textAlign='left';cy+=32;
+      ctx.fillStyle='#fff';ctx.font='bold 32px "Black Ops One",Impact,sans-serif';ctx.fillText(cd.arms[0].c,cX+16,cy+32);
+      ctx.fillStyle='#ffde00';ctx.font='bold 13px "Noto Sans JP",sans-serif';ctx.fillText(cd.arms[0].n,cX+16,cy+52);
+    }else{
+      const slotH=Math.floor((cH-(cy-cY)-16)/3);
+      cd.arms.forEach((arm,i)=>{
+        const ay=cy+i*slotH;
+        if(i>0){ctx.strokeStyle='#1e1e1e';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cX+16,ay-2);ctx.lineTo(cX+cW-16,ay-2);ctx.stroke();}
+        ctx.fillStyle='#fff';ctx.font=`bold ${Math.min(slotH*.55,30)|0}px "Black Ops One",Impact,sans-serif`;ctx.fillText(arm.c,cX+16,ay+slotH*.52);
+        ctx.fillStyle='#ffde00';ctx.font='bold 12px "Noto Sans JP",sans-serif';ctx.fillText(arm.n,cX+16,ay+slotH*.8);
+      });
+    }
+  });
+
+  // VS
+  ctx.fillStyle='#ff2d2d';ctx.font='bold 20px "Black Ops One",Impact,sans-serif';ctx.textAlign='center';ctx.fillText('VS',W/2,H/2+10);
+  // フッター
+  ctx.fillStyle='rgba(255,255,255,.12)';ctx.font='9px "Noto Sans JP",sans-serif';ctx.fillText('ARMS ROULETTE PRO',W/2,H-8);
+
+  // クリップボードにコピー（非対応ならダウンロード）
+  try{
+    canvas.toBlob(async blob=>{
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      showMsg('画像をクリップボードにコピーしました！');
+    },'image/png');
+  }catch(e){
+    const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='arms-result.png';a.click();
+    showMsg('画像を保存しました（コピー非対応環境）');
+  }
+}
+function roundRect(ctx,x,y,w,h,r){
+  if(typeof r==='number')r={tl:r,tr:r,bl:r,br:r};
+  ctx.moveTo(x+r.tl,y);ctx.lineTo(x+w-r.tr,y);ctx.arcTo(x+w,y,x+w,y+r.tr,r.tr);
+  ctx.lineTo(x+w,y+h-r.br);ctx.arcTo(x+w,y+h,x+w-r.br,y+h,r.br);
+  ctx.lineTo(x+r.bl,y+h);ctx.arcTo(x,y+h,x,y+h-r.bl,r.bl);
+  ctx.lineTo(x,y+r.tl);ctx.arcTo(x,y,x+r.tl,y,r.tl);ctx.closePath();
+}
+
+function showMsg(t){
+  const el=document.getElementById('msg');
+  el.textContent=t;el.style.opacity='1';
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.textContent='',300);},2200);
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
