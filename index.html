@@ -357,4 +357,992 @@ details[open] summary::after{content:'▲'}
   line-height:1;letter-spacing:.04em;flex-shrink:0;min-width:28px;
 }
 .reel-name{
-  font-size:
+  font-size:.82rem;font-weight:700;color:var(--yellow);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;
+}
+
+/* ロック時エフェクト */
+.reel-body.locked{border-color:rgba(255,222,0,.4);box-shadow:0 0 10px rgba(255,222,0,.15)}
+.reel-body.locked .reel-highlight{
+  border-color:rgba(255,222,0,.3);background:rgba(255,222,0,.05);
+}
+@keyframes lockFlash{0%{background:rgba(255,222,0,.3)}100%{background:rgba(255,222,0,.02)}}
+.reel-body.lock-flash{animation:lockFlash .25s ease}
+@keyframes bgLockFlash{0%{background-color:#1a1400}50%{background-color:#1a1400}100%{background-color:#050505}}
+#slot-overlay.bg-lock-flash{animation:bgLockFlash .6s ease}
+
+/* 座標バッジ（リール右） */
+.reel-coord-badge{
+  font-family:'Black Ops One',cursive;font-size:.72rem;
+  color:#333;width:34px;text-align:center;flex-shrink:0;
+  transition:color .3s;
+}
+.reel-coord-badge.lit{color:var(--yellow);text-shadow:0 0 8px rgba(255,222,0,.5)}
+
+/* 筐体下部 */
+.slot-machine-footer{
+  padding:10px 14px 12px;background:#0d0d0d;border-top:1px solid #1a1a1a;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.slot-status{
+  font-family:'Black Ops One',cursive;font-size:.65rem;letter-spacing:.2em;
+  color:#333;transition:color .3s;
+}
+.slot-status.spinning{color:#ff6600;animation:statusBlink .4s step-end infinite}
+.slot-status.locked{color:var(--yellow)}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TAP TO CONTINUE */
+#phase-done{gap:20px}
+@keyframes doneIn{0%{opacity:0;transform:scale(.8) translateY(20px)}60%{transform:scale(1.03)}100%{opacity:1;transform:none}}
+.done-tap{
+  font-family:'Black Ops One',cursive;font-size:.85rem;letter-spacing:.22em;
+  color:#444;border:1px solid #2a2a2a;padding:12px 32px;border-radius:30px;
+  cursor:pointer;transition:color .2s,border-color .2s,box-shadow .2s;
+  animation:doneIn .5s cubic-bezier(.22,1,.36,1) .2s both;
+}
+.done-tap:hover{color:#888;border-color:#555;box-shadow:0 0 16px rgba(255,222,0,.08)}
+.done-result-preview{
+  display:flex;flex-direction:column;gap:4px;align-items:center;
+  animation:doneIn .5s cubic-bezier(.22,1,.36,1) both;
+}
+.done-player-name{
+  font-family:'Black Ops One',cursive;font-size:1rem;color:var(--yellow);
+  letter-spacing:.06em;
+}
+.done-arms-preview{font-size:.72rem;color:#666;letter-spacing:.05em}
+
+/* フラッシュ */
+@keyframes overlayFlash{0%{background-color:#1a1400}100%{background-color:#050505}}
+#slot-overlay.flash{animation:overlayFlash .4s ease}
+
+/* VS splash */
+#vs-splash{
+  position:absolute;inset:0;z-index:20;
+  display:none;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#vs-splash.show{display:flex}
+@keyframes vsSplash{0%{opacity:0;transform:scale(2.5)}40%{opacity:1;transform:scale(.95)}70%{transform:scale(1.02)}100%{opacity:0;transform:scale(1)}}
+.vs-text{
+  font-family:'Black Ops One',cursive;font-size:5rem;color:var(--red);
+  text-shadow:0 0 60px rgba(255,45,45,.8),0 0 120px rgba(255,45,45,.4);
+  animation:vsSplash 1.2s cubic-bezier(.22,1,.36,1) both;
+  letter-spacing:.1em;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ ARMS ROULETTE ⚡</h1>
+  <p>Random Arms &amp; Character Picker</p>
+</div>
+
+<div class="main">
+
+  <div id="pwa-banner">
+    <span>📲 ホーム画面に追加してオフラインでも使えます</span>
+    <button id="pwa-install" onclick="installPWA()">追加</button>
+  </div>
+
+  <!-- 3人対戦モード（独立パネル） -->
+  <div class="panel">
+    <div class="panel-head" id="p3Head" onclick="toggle3pPanel()">
+      <div class="panel-head-left"><div class="dot"></div>3人対戦モード</div>
+      <span class="panel-head-arrow">▼</span>
+    </div>
+    <div class="panel-collapse" id="p3Collapse">
+      <div class="panel-body">
+        <div class="toggle-row">
+          <div class="toggle-label">3人対戦モード<small>ペア選択でプレイヤー名を自動切替</small></div>
+          <label class="switch"><input type="checkbox" id="show3p" onchange="toggle3p()"><span class="slider"></span></label>
+        </div>
+        <div id="name-section">
+          <button class="name-toggle-btn" id="nameToggleBtn" onclick="toggleNameCollapse()">
+            <span id="nameToggleLabel">▸ 名前を入力する</span>
+            <span class="ntarrow">▼</span>
+          </button>
+          <div class="name-collapse" id="nameCollapse">
+            <div class="name-row">
+              <div class="name-inp-wrap"><span class="name-inp-label">P1</span><input class="name-inp" id="n1" placeholder="プレイヤー1" oninput="updMatch()"></div>
+              <div class="name-inp-wrap"><span class="name-inp-label">P2</span><input class="name-inp" id="n2" placeholder="プレイヤー2" oninput="updMatch()"></div>
+              <div class="name-inp-wrap"><span class="name-inp-label">P3</span><input class="name-inp" id="n3" placeholder="プレイヤー3" oninput="updMatch()"></div>
+            </div>
+          </div>
+          <div class="match-grid">
+            <button class="match-btn active" id="m12" onclick="setMatch(1,2,'m12')"><span id="v12a">P1</span><span class="vs">vs</span><span id="v12b">P2</span></button>
+            <button class="match-btn" id="m23" onclick="setMatch(2,3,'m23')"><span id="v23a">P2</span><span class="vs">vs</span><span id="v23b">P3</span></button>
+            <button class="match-btn" id="m13" onclick="setMatch(1,3,'m13')"><span id="v13a">P1</span><span class="vs">vs</span><span id="v13b">P3</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- オプション（折りたたみ） -->
+  <div class="panel">
+    <div class="panel-head" id="optHead" onclick="toggleOptions()">
+      <div class="panel-head-left"><div class="dot"></div>OPTIONS</div>
+      <span class="panel-head-arrow">▼</span>
+    </div>
+    <div class="panel-collapse" id="optCollapse">
+      <div class="panel-body">
+        <div class="toggle-row">
+          <div class="toggle-label">「全アーム統一」を含める<small>約6%の確率で特殊モード発生</small></div>
+          <label class="switch"><input type="checkbox" id="i43"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">キャラ名を表示しない</div>
+          <label class="switch"><input type="checkbox" id="hC"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">演出をスキップ<small>即結果表示（連戦時など）</small></div>
+          <label class="switch"><input type="checkbox" id="skipAnim"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="toggle-label">属性の表示方法<small>アーム名の属性をどう見せるか</small></div>
+          <div class="attr-mode-wrap" style="width:100%">
+            <button class="attr-mode-btn" id="attrEmoji" onclick="setAttrMode('emoji')">絵文字</button>
+            <button class="attr-mode-btn active" id="attrColor" onclick="setAttrMode('color')">文字色</button>
+            <button class="attr-mode-btn" id="attrNone" onclick="setAttrMode('off')">非表示</button>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">除外設定を使う<small>特定のキャラ・アームを抽選から外す</small></div>
+          <label class="switch"><input type="checkbox" id="useExc" onchange="toggleExc()"><span class="slider"></span></label>
+        </div>
+        <div id="exc-section" style="display:none">
+          <div class="exc-collapsible-head" id="exc-head" onclick="toggleExcBody()">
+            <span class="exc-head-label">除外リストを編集する</span>
+            <span class="exc-arrow">▼</span>
+          </div>
+          <div class="exc-body" id="exc-body">
+            <div style="padding-bottom:10px">
+              <div class="exc-tabs">
+                <button class="exc-tab active" id="tab-char" onclick="showExcTab('char')">キャラクター</button>
+                <button class="exc-tab" id="tab-arm" onclick="showExcTab('arm')">アーム</button>
+              </div>
+              <div class="exc-list" id="exc-list-char"></div>
+              <div id="exc-arm-wrap" style="display:none">
+                <div class="attr-exc-wrap" id="attr-exc-btns"></div>
+                <div class="exc-list" id="exc-list-arm"></div>
+              </div>
+              <button class="exc-clear" onclick="clearExc()">除外をリセット</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 結果エリア -->
+  <div class="result-grid">
+    <div class="p-card" id="cardA">
+      <div class="p-card-head">
+        <div class="p-name" id="labA" contenteditable="true">プレイヤー1</div>
+        <span class="p-edit" id="editA">✏️</span>
+      </div>
+      <div class="p-body"><div id="cA"></div><div id="rA"></div></div>
+    </div>
+    <div class="p-card" id="cardB">
+      <div class="p-card-head">
+        <div class="p-name" id="labB" contenteditable="true">プレイヤー2</div>
+        <span class="p-edit" id="editB">✏️</span>
+      </div>
+      <div class="p-body"><div id="cB"></div><div id="rB"></div></div>
+    </div>
+  </div>
+
+  <button class="btn-draw" id="btn-draw" onclick="drawWithSlot()">START</button>
+  <button class="btn-save" onclick="saveCard()">🖼️ 画像をクリップボードにコピー</button>
+  <button class="btn-copy" onclick="cp()">📋 テキストでコピー</button>
+  <div id="msg"></div>
+
+  <details>
+    <summary>使い方 &amp; 機能説明</summary>
+    <div class="info-body">
+      <b>基本操作</b>
+      「抽選スタート」でスロット演出が始まり、タップで結果を確定します。<br>
+      プレイヤー名は ✏️ または直接タップして編集できます。
+      <b>カード保存</b>
+      「カード画像として保存」で結果をPNG画像としてダウンロード。そのままSNSやLINEで共有できます。
+      <b>除外設定</b>
+      「除外設定を使う」をONにすると、特定のキャラやアームを抽選から外せます。
+      <b>全アーム統一</b>
+      約6%の確率で3スロットすべてが同じアームになる特殊モード。
+      <b>3人対戦モード</b>
+      名前入力は折りたたみ可能。対戦カードは常時表示でペアを選ぶと名前が自動反映されます。
+      <b>オフライン対応（PWA）</b>
+      ホーム画面に追加するとアプリとして使用可能。Wi-Fiがなくても動きます。
+    </div>
+  </details>
+
+</div>
+
+<!-- スロット演出オーバーレイ -->
+<div id="slot-overlay">
+  <div id="particles"></div>
+
+  <!-- VS splash -->
+  <div id="vs-splash"><div class="vs-text">VS</div></div>
+  <div id="start-splash"></div>
+
+  <!-- Phase 0: アナウンス -->
+  <div class="slot-phase" id="phase-announce">
+    <div class="announce-label">NEXT PLAYER</div>
+    <div class="announce-name" id="announce-name">???</div>
+    <div class="announce-sub" id="announce-sub">SELECTION START!</div>
+  </div>
+
+  <!-- Phase 1: カウントダウン -->
+  <div class="slot-phase" id="phase-cd">
+    <div id="cd-wrap"></div>
+  </div>
+
+  <!-- Phase 2: スロットマシン -->
+  <div class="slot-phase" id="phase-slot">
+    <div class="slot-player-header">
+      <div class="slot-player-badge">NOW SELECTING</div>
+      <div class="slot-player-name" id="slot-pname">???</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;padding:0 14px">
+      <div class="slot-machine">
+        <!-- キャラリール -->
+        <div class="slot-char-section">
+          <div class="slot-char-label">FIGHTER</div>
+          <div class="slot-char-window">
+            <div class="slot-char-drum" id="so-char-drum"><div class="slot-char-item">— — —</div></div>
+          </div>
+        </div>
+        <!-- アームリール3本 -->
+        <div class="slot-reels-wrap">
+          <div class="reel-row">
+            <div class="reel-num">1</div>
+            <div class="reel-body" id="reel-0"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-0">--</div>
+          </div>
+          <div class="reel-row">
+            <div class="reel-num">2</div>
+            <div class="reel-body" id="reel-1"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-1">--</div>
+          </div>
+          <div class="reel-row">
+            <div class="reel-num">3</div>
+            <div class="reel-body" id="reel-2"><div class="reel-highlight"></div><div class="reel-track"></div></div>
+            <div class="reel-coord-badge" id="rbadge-2">--</div>
+          </div>
+        </div>
+        <div class="slot-machine-footer">
+          <div class="slot-status" id="slot-status">READY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3: 完了 -->
+  <div class="slot-phase" id="phase-done">
+    <div class="done-result-preview" id="done-preview"></div>
+    <div class="done-tap" id="done-tap">TAP TO CONTINUE</div>
+  </div>
+</div>
+
+<canvas id="shareCanvas"></canvas>
+<textarea id="temp-area" style="position:absolute;left:-9999px"></textarea>
+
+<script>
+const chars=["スプリングマン","リボンガール","ニンジャラ","マスターマミー","ミェンミェン","メカニッカ","ツインテーラ","バイト＆バーク","キッドコブラ","DNAマン","マックスブラス","ローラポップ","ミサンゴ","スプリングトロン","ドクターコイル"];
+
+// アーム定義：名前・絵文字・属性クラス
+const armsData=[
+  {n:"トースター",e:"🔥",a:"fire"},{n:"スパーキー",e:"⚡",a:"thunder"},{n:"チャクラム",e:"⚠️",a:"shock"},
+  {n:"ビッグパンチ",e:"🈚",a:"none"},{n:"ドラゴン",e:"🔥",a:"fire"},{n:"エクスブロー",e:"💥",a:"explosion"},
+  {n:"スコルピオ",e:"💀",a:"poison"},{n:"ブーメラン",e:"🍃",a:"wind"},{n:"ポップスター",e:"🍃",a:"wind"},
+  {n:"プレッシャー",e:"🈚",a:"none"},{n:"オートカノン",e:"🔥",a:"fire"},{n:"メガボルト",e:"⚡",a:"thunder"},
+  {n:"ロースター",e:"🔥",a:"fire"},{n:"イルイル",e:"💀",a:"poison"},{n:"トライデント",e:"⚠️",a:"shock"},
+  {n:"サラマンダー",e:"🔥",a:"fire"},{n:"トリプルボム",e:"💥",a:"explosion"},{n:"フェニックス",e:"🔥",a:"fire"},
+  {n:"ホットリング",e:"🔥",a:"fire"},{n:"ニトロハンマー",e:"💥",a:"explosion"},{n:"スカリー",e:"💀",a:"poison"},
+  {n:"リボルバー",e:"⚡",a:"thunder"},{n:"フリーザー",e:"🧊",a:"ice"},{n:"チェイサー",e:"⚡",a:"thunder"},
+  {n:"オロチ",e:"🍃",a:"wind"},{n:"ゲルゲル",e:"🚫",a:"blind"},{n:"ヌンチャク",e:"⚠️",a:"shock"},
+  {n:"ハンドロック",e:"🔥",a:"fire"},{n:"ヘビィハンマー",e:"⚠️",a:"shock"},{n:"パラソル",e:"🍃",a:"wind"},
+  {n:"ギャラクシー",e:"🔥",a:"fire"},{n:"バーチカル",e:"🔥",a:"fire"},{n:"レイドラ",e:"🧊",a:"ice"},
+  {n:"ジョーカー",e:"🚫",a:"blind"},{n:"パラライザ",e:"⚡",a:"thunder"},{n:"ロックオン",e:"💥",a:"explosion"},
+  {n:"サンダーバード",e:"⚡",a:"thunder"},{n:"バルーナー",e:"🈚",a:"none"},{n:"アイスエッジ",e:"🧊",a:"ice"},
+  {n:"ファランクス",e:"⚡",a:"thunder"},{n:"キックバック",e:"🈚",a:"none"},{n:"ヒュンチャク",e:"🧊",a:"ice"}
+];
+
+// 属性定義
+const attrDefs=[
+  {a:"fire",   e:"🔥",label:"炎",   color:"#ff4444"},
+  {a:"ice",    e:"🧊",label:"氷",   color:"#44ccff"},
+  {a:"blind",  e:"🚫",label:"ブラインド",color:"#888888"},
+  {a:"none",   e:"🈚",label:"無属性",color:"#f5f5f5"},
+  {a:"wind",   e:"🍃",label:"風",   color:"#44dd88"},
+  {a:"explosion",e:"💥",label:"爆発",color:"#ff8800"},
+  {a:"thunder",e:"⚡",label:"雷",   color:"#4488ff"},
+  {a:"shock",  e:"⚠️",label:"ショック",color:"#ffdd00"},
+  {a:"poison", e:"💀",label:"毒",   color:"#aa44ff"},
+];
+
+// 属性表示モード（デフォルト: color）
+let attrMode='color';
+
+// 除外された属性セット
+const excludedAttrs=new Set();
+
+// アーム名文字列を生成（モードに応じて）
+function armDisplay(ad){
+  if(attrMode==='emoji') return ad.n+' '+ad.e;
+  if(attrMode==='color') return ad.n;
+  return ad.n; // off も名前だけ
+}
+// アームのCSSクラスを返す
+function armClass(ad){
+  if(attrMode==='color') return 'arm-name attr-'+ad.a;
+  return 'arm-name';
+}
+
+// 抽選対象アームプール（文字列ではなくindexで管理）
+const excludedChars=new Set(), excludedArms=new Set();
+let copyText="", deferredPrompt=null, isDrawing=false;
+
+// ── PWA ──
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('pwa-banner').style.display='flex';});
+function installPWA(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('pwa-banner').style.display='none';});}
+
+// ── OPTIONS 折りたたみ ──
+function toggleOptions(){
+  const head=document.getElementById('optHead');
+  const col=document.getElementById('optCollapse');
+  const open=col.classList.toggle('open');
+  head.classList.toggle('open',open);
+}
+function toggle3pPanel(){
+  const head=document.getElementById('p3Head');
+  const col=document.getElementById('p3Collapse');
+  const open=col.classList.toggle('open');
+  head.classList.toggle('open',open);
+}
+
+// ── 3P MODE ──
+function toggle3p(){
+  const on=document.getElementById('show3p').checked;
+  document.getElementById('name-section').style.display=on?'block':'none';
+  ['editA','editB'].forEach(id=>document.getElementById(id).style.display=on?'none':'inline');
+  if(on)updMatch();
+}
+function toggleNameCollapse(){
+  const col=document.getElementById('nameCollapse');
+  const btn=document.getElementById('nameToggleBtn');
+  const lbl=document.getElementById('nameToggleLabel');
+  const open=col.classList.toggle('open');
+  btn.classList.toggle('open',open);
+  lbl.textContent=open?'▾ 名前を編集中':'▸ 名前を入力する';
+}
+function updMatch(){
+  const v1=document.getElementById('n1').value||"P1";
+  const v2=document.getElementById('n2').value||"P2";
+  const v3=document.getElementById('n3').value||"P3";
+  document.getElementById('v12a').textContent=v1;document.getElementById('v12b').textContent=v2;
+  document.getElementById('v23a').textContent=v2;document.getElementById('v23b').textContent=v3;
+  document.getElementById('v13a').textContent=v1;document.getElementById('v13b').textContent=v3;
+  const active=document.querySelector('.match-btn.active');
+  if(active)active.click();
+}
+function setMatch(a,b,btnId){
+  document.getElementById('labA').textContent=document.getElementById('n'+a).value||"P"+a;
+  document.getElementById('labB').textContent=document.getElementById('n'+b).value||"P"+b;
+  document.querySelectorAll('.match-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById(btnId).classList.add('active');
+}
+
+// ── 属性モード ──
+function setAttrMode(mode){
+  attrMode=mode;
+  ['emoji','color','off'].forEach(m=>{
+    document.getElementById('attr'+m.charAt(0).toUpperCase()+m.slice(1))?.classList.toggle('active',m===mode);
+  });
+  // attrNoneだけIDが違うので対応
+  document.getElementById('attrEmoji').classList.toggle('active',mode==='emoji');
+  document.getElementById('attrColor').classList.toggle('active',mode==='color');
+  document.getElementById('attrNone').classList.toggle('active',mode==='off');
+  // 結果表示中なら再描画
+  if(document.getElementById('rA').innerHTML) refreshArmDisplay();
+}
+function refreshArmDisplay(){
+  ['A','B'].forEach(s=>{
+    document.getElementById('r'+s).querySelectorAll('.arm-item').forEach(item=>{
+      const nameEl=item.querySelector('.arm-name');
+      if(!nameEl)return;
+      const txt=nameEl.textContent;
+      const ad=armsData.find(a=>nameEl.textContent.replace(/\s*[🔥⚡⚠️🈚💥💀🍃🧊🚫]/gu,'').trim()===a.n||nameEl.textContent===a.n);
+      if(!ad)return;
+      nameEl.textContent=armDisplay(ad);
+      nameEl.className=armClass(ad);
+    });
+  });
+}
+
+// ── EXCLUDE ──
+function toggleExc(){
+  const on=document.getElementById('useExc').checked;
+  document.getElementById('exc-section').style.display=on?'block':'none';
+  if(on){buildExcLists();document.getElementById('exc-head').classList.add('open');document.getElementById('exc-body').classList.add('open');}
+}
+function toggleExcBody(){
+  document.getElementById('exc-head').classList.toggle('open');
+  document.getElementById('exc-body').classList.toggle('open');
+}
+function buildExcLists(){
+  // キャラ
+  const lc=document.getElementById('exc-list-char');
+  lc.innerHTML='';
+  chars.forEach(c=>lc.appendChild(makeExcItem(c,excludedChars)));
+  // 属性ボタン
+  const attrWrap=document.getElementById('attr-exc-btns');
+  attrWrap.innerHTML='';
+  attrDefs.forEach(def=>{
+    const btn=document.createElement('button');
+    btn.className='attr-exc-btn'+(excludedAttrs.has(def.a)?' active':'');
+    btn.style.color=def.color;
+    btn.innerHTML=`${def.e} ${def.label}`;
+    btn.onclick=()=>toggleAttrExclude(def,btn);
+    attrWrap.appendChild(btn);
+  });
+  // アーム個別
+  buildArmExcList();
+}
+function toggleAttrExclude(def,btn){
+  if(excludedAttrs.has(def.a)){
+    excludedAttrs.delete(def.a);
+    btn.classList.remove('active');
+    // その属性のアームを除外解除
+    armsData.forEach((ad,i)=>{if(ad.a===def.a)excludedArms.delete(i);});
+  }else{
+    excludedAttrs.add(def.a);
+    btn.classList.add('active');
+    // その属性のアームを全除外
+    armsData.forEach((ad,i)=>{if(ad.a===def.a)excludedArms.add(i);});
+  }
+  buildArmExcList();
+}
+function buildArmExcList(){
+  const la=document.getElementById('exc-list-arm');
+  la.innerHTML='';
+  armsData.forEach((ad,i)=>la.appendChild(makeArmExcItem(ad,i)));
+}
+function makeArmExcItem(ad,idx){
+  const el=document.createElement('div');
+  el.className='exc-item'+(excludedArms.has(idx)?' excluded':'');
+  el.innerHTML=`<div class="exc-check">${excludedArms.has(idx)?'✕':''}</div><span>${ad.n} ${ad.e}</span>`;
+  el.onclick=()=>{
+    if(excludedArms.has(idx)){excludedArms.delete(idx);el.classList.remove('excluded');el.querySelector('.exc-check').textContent='';}
+    else{excludedArms.add(idx);el.classList.add('excluded');el.querySelector('.exc-check').textContent='✕';}
+  };
+  return el;
+}
+function makeExcItem(name,set){
+  const el=document.createElement('div');
+  el.className='exc-item'+(set.has(name)?' excluded':'');
+  el.innerHTML=`<div class="exc-check">${set.has(name)?'✕':''}</div><span>${name}</span>`;
+  el.onclick=()=>{
+    if(set.has(name)){set.delete(name);el.classList.remove('excluded');el.querySelector('.exc-check').textContent='';}
+    else{set.add(name);el.classList.add('excluded');el.querySelector('.exc-check').textContent='✕';}
+  };
+  return el;
+}
+function showExcTab(t){
+  document.getElementById('tab-char').classList.toggle('active',t==='char');
+  document.getElementById('tab-arm').classList.toggle('active',t==='arm');
+  document.getElementById('exc-list-char').style.display=t==='char'?'grid':'none';
+  document.getElementById('exc-arm-wrap').style.display=t==='arm'?'block':'none';
+}
+function clearExc(){
+  excludedChars.clear();excludedArms.clear();excludedAttrs.clear();
+  buildExcLists();showMsg('除外リセット完了');
+}
+
+// ── RANDOM ──
+function randChar(){const pool=chars.filter(c=>!excludedChars.has(c));return(pool.length?pool:chars)[Math.floor(Math.random()*(pool.length||chars.length))];}
+function randArmN(){
+  const pool=armsData.map((_,i)=>i).filter(i=>!excludedArms.has(i));
+  const src=pool.length?pool:armsData.map((_,i)=>i);
+  const idx=src[Math.floor(Math.random()*src.length)];
+  const ad=armsData[idx];
+  const co=Math.ceil((idx+1)/7)+"-"+((idx%7)+1);
+  return{co,ar:armDisplay(ad),ad,idx};
+}
+
+// ── UTILS ──
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ── フェーズ切り替え ──
+function showPhase(id){
+  document.querySelectorAll('.slot-phase').forEach(p=>p.classList.remove('active'));
+  if(id) document.getElementById(id).classList.add('active');
+}
+
+// ── アナウンス ──
+function runAnnounce(name){
+  return new Promise(res=>{
+    showPhase('phase-announce');
+    const nameEl=document.getElementById('announce-name');
+    const subEl=document.getElementById('announce-sub');
+    nameEl.textContent=name;
+    nameEl.className='announce-name announce-in';
+    subEl.className='announce-sub announce-in';
+    subEl.style.animationDelay='.18s';
+    setTimeout(()=>{
+      nameEl.className='announce-name announce-out';
+      subEl.className='announce-sub announce-out';
+      setTimeout(res,320);
+    },1200);
+  });
+}
+
+// ── カウントダウン ──
+function runCountdown(){
+  return new Promise(res=>{
+    showPhase('phase-cd');
+    const wrap=document.getElementById('cd-wrap');
+    let n=3;
+    const step=()=>{
+      if(n===0){wrap.innerHTML='';res();return;}
+      wrap.innerHTML=`<div class="cd-num">${n}</div>`;
+      n--;setTimeout(step,900);
+    };
+    step();
+  });
+}
+
+// ── キャラドラム ──
+function buildCharDrum(finalName){
+  const drum=document.getElementById('so-char-drum');
+  const pool=chars.filter(c=>!excludedChars.has(c));
+  const src=pool.length?pool:chars;
+  const items=[...src,...src,...src,...src].sort(()=>Math.random()-.5).slice(0,45);
+  items.push(finalName);
+  drum.innerHTML='';
+  drum.style.cssText='transition:none;transform:translateY(0)';
+  items.forEach(txt=>{
+    const d=document.createElement('div');d.className='slot-char-item';d.textContent=txt;drum.appendChild(d);
+  });
+  return drum;
+}
+
+// ── アームリール構築 ──
+function buildReel(reelIdx, finalArm){
+  const body=document.getElementById(`reel-${reelIdx}`);
+  const track=body.querySelector('.reel-track');
+  const pool=armsData.map((_,i)=>i).filter(i=>!excludedArms.has(i));
+  const src=pool.length?pool:armsData.map((_,i)=>i);
+  const items=[...src,...src,...src,...src,...src].sort(()=>Math.random()-.5).slice(0,60);
+  items.push(finalArm.idx);
+  track.innerHTML='';
+  track.style.cssText='transition:none;transform:translateY(0)';
+  items.forEach(idx=>{
+    const ad=armsData[idx];
+    const co=Math.ceil((idx+1)/7)+"-"+((idx%7)+1);
+    const attrColor=attrDefs.find(d=>d.a===ad.a)?.color||'#ffde00';
+    const d=document.createElement('div');
+    d.className='reel-item';
+    d.innerHTML=`<div class="reel-coord">${co}</div><div class="reel-name" style="color:${attrColor}">${ad.n}</div>`;
+    track.appendChild(d);
+  });
+  return track;
+}
+
+// ── スピン ──
+function spinTrack(track, itemH, duration, delay){
+  return new Promise(res=>{
+    setTimeout(()=>{
+      void track.offsetHeight;
+      const stopAt=(track.children.length-1)*itemH;
+      // イージング：最初速く、最後じわっと止まる
+      track.style.transition=`transform ${duration}ms cubic-bezier(.02,.85,.12,1)`;
+      track.style.transform=`translateY(-${stopAt}px)`;
+      setTimeout(res, duration+60);
+    }, delay);
+  });
+}
+
+// ── 1プレイヤー分スロット演出 ──
+async function runPlayerSlot(result, hC){
+  const status=document.getElementById('slot-status');
+  document.getElementById('slot-pname').textContent=result.lab;
+
+  // リール初期化
+  for(let i=0;i<3;i++){
+    document.getElementById(`reel-${i}`).classList.remove('locked','lock-flash');
+    document.getElementById(`rbadge-${i}`).classList.remove('lit');
+    document.getElementById(`rbadge-${i}`).textContent='--';
+    document.getElementById(`reel-${i}`).querySelector('.reel-track').innerHTML='';
+  }
+  document.getElementById('so-char-drum').innerHTML='<div class="slot-char-item">— — —</div>';
+  document.getElementById('so-char-drum').style.cssText='transition:none;transform:translateY(0)';
+
+  showPhase('phase-slot');
+  await sleep(180);
+
+  // キャラスピン
+  status.textContent='SPINNING';status.className='slot-status spinning';
+  if(!hC){
+    const charDrum=buildCharDrum(result.ch);
+    await spinTrack(charDrum,30,2000+Math.random()*400,0);
+    // 確定した最後のアイテムに光り演出
+    const lastItem=charDrum.lastElementChild;
+    if(lastItem){lastItem.classList.remove('confirmed');void lastItem.offsetWidth;lastItem.classList.add('confirmed');}
+    // 背景も光らせる
+    const ovChar=document.getElementById('slot-overlay');
+    ovChar.classList.remove('bg-lock-flash');void ovChar.offsetWidth;ovChar.classList.add('bg-lock-flash');
+  }
+  await sleep(120);
+
+  // アームリール 1本ずつ止まる
+  for(let i=0;i<3;i++){
+    const reel=document.getElementById(`reel-${i}`);
+    const track=buildReel(i, result.armList[i]);
+    const dur = 1400 + i*600 + Math.random()*300;
+    await spinTrack(track, 52, dur, 0);
+    // ロック
+    reel.classList.add('locked');
+    void reel.offsetWidth;
+    reel.classList.add('lock-flash');
+    const ov=document.getElementById('slot-overlay');
+    ov.classList.remove('bg-lock-flash');
+    void ov.offsetWidth;
+    ov.classList.add('bg-lock-flash');
+    const badge=document.getElementById(`rbadge-${i}`);
+    badge.textContent=result.armList[i].co;
+    badge.classList.add('lit');
+    await sleep(260);
+  }
+
+  status.textContent='LOCKED';status.className='slot-status locked';
+  await sleep(200);
+}
+
+// ── パーティクル ──
+function spawnParticles(){
+  const c=document.getElementById('particles');c.innerHTML='';
+  ['#ffde00','#ff2d2d','#ffffff','#ffc200','#ff9966'].forEach(col=>{
+    for(let i=0;i<8;i++){
+      const p=document.createElement('div');p.className='particle';
+      const size=5+Math.random()*9;
+      p.style.cssText=`left:${Math.random()*100}%;width:${size}px;height:${size}px;background:${col};border-radius:${Math.random()>.5?'50%':'2px'};animation-duration:${1.4+Math.random()*1.8}s;animation-delay:${Math.random()*.6}s`;
+      c.appendChild(p);
+    }
+  });
+  setTimeout(()=>c.innerHTML='',4000);
+}
+
+// ── START スプラッシュ ──
+function showStartSplash(){
+  return new Promise(res=>{
+    const el=document.getElementById('start-splash');
+    el.innerHTML='<div class="start-splash-text">START</div>';
+    el.classList.add('show');
+    setTimeout(()=>{el.classList.remove('show');el.innerHTML='';res();},900);
+  });
+}
+
+// ── VS スプラッシュ ──
+function showVsSplash(){
+  return new Promise(res=>{
+    const el=document.getElementById('vs-splash');
+    el.innerHTML='<div class="vs-text">VS</div>';
+    el.classList.add('show');
+    setTimeout(()=>{el.classList.remove('show');el.innerHTML='';res();},1300);
+  });
+}
+
+// ── MAIN DRAW ──
+async function drawWithSlot(){
+  if(isDrawing)return;
+  isDrawing=true;
+  document.getElementById('btn-draw').disabled=true;
+
+  const i43=document.getElementById('i43').checked;
+  const hC=document.getElementById('hC').checked;
+  const skip=document.getElementById('skipAnim').checked;
+  const labA=document.getElementById('labA').textContent;
+  const labB=document.getElementById('labB').textContent;
+
+  // 結果を1回だけ決定
+  const results=[];
+  [{ch:randChar(),lab:labA,side:'A'},{ch:randChar(),lab:labB,side:'B'}].forEach(p=>{
+    const special=i43&&Math.random()<0.061;
+    let armList=[];
+    if(special){const a=randArmN();armList=[a,a,a];}
+    else{for(let i=0;i<3;i++)armList.push(randArmN());}
+    results.push({...p,armList,special});
+  });
+
+  // スキップ
+  if(skip){
+    applyResults(results,hC);
+    document.getElementById('btn-draw').disabled=false;
+    isDrawing=false;
+    return;
+  }
+
+  // オーバーレイ起動
+  const ov=document.getElementById('slot-overlay');
+  ov.onclick=null;
+  ov.classList.add('active');
+  showPhase(null);
+  await sleep(80);
+
+  // ── P1 ──
+  await runAnnounce(labA);
+  await runCountdown();
+  await showStartSplash();
+  await sleep(60);
+  await runPlayerSlot(results[0], hC);
+
+  // VS スプラッシュ
+  spawnParticles();
+  ov.classList.add('flash');setTimeout(()=>ov.classList.remove('flash'),400);
+  await showVsSplash();
+  await sleep(100);
+
+  // ── P2 ──
+  await runAnnounce(labB);
+  await showStartSplash();
+  await sleep(60);
+  await runPlayerSlot(results[1], hC);
+
+  // フィナーレ
+  spawnParticles();
+  ov.classList.add('flash');setTimeout(()=>ov.classList.remove('flash'),400);
+  await sleep(300);
+
+  // 結果プレビュー表示してDone画面へ
+  const preview=document.getElementById('done-preview');
+  preview.innerHTML=results.map(r=>`
+    <div style="text-align:center;margin-bottom:6px">
+      <div class="done-player-name">${r.lab}</div>
+      <div class="done-arms-preview">${r.armList.map(a=>a.co+' '+a.ar).join(' / ')}</div>
+    </div>
+  `).join('<div style="font-family:Black Ops One,cursive;color:#ff2d2d;font-size:1rem;letter-spacing:.1em;margin:4px 0">VS</div>');
+  showPhase('phase-done');
+
+  document.getElementById('done-tap').onclick=()=>{
+    ov.classList.remove('active');
+    showPhase(null);
+    applyResults(results,hC);
+    document.getElementById('btn-draw').disabled=false;
+    isDrawing=false;
+  };
+}
+
+// ── 結果を画面に反映 ──
+function applyResults(results,hC){
+  lastResults=results;
+  lastHC=hC;
+  let t1='',t2='';
+  results.forEach(r=>{
+    const cEl=document.getElementById('c'+r.side);
+    const rEl=document.getElementById('r'+r.side);
+    cEl.innerHTML='';rEl.innerHTML='';
+    if(!hC)cEl.innerHTML=`<span class="char-name reveal">${r.ch}</span>`;
+    if(r.special){
+      const{co,ar,ad}=r.armList[0];
+      const cls=armClass(ad);
+      const disp=armDisplay(ad);
+      rEl.innerHTML=`<span class="special-label">ALL SAME</span><div class="arm-item reveal"><div class="arm-coord">${co}</div><span class="${cls}">${disp}</span></div>`;
+      const line=(hC?r.lab:r.lab+": "+r.ch)+"\n【全アーム統一】\n"+co+" "+ad.n+" "+ad.e;
+      if(r.side==='A')t1=line;else t2=line;
+    }else{
+      const lines=[];
+      r.armList.forEach(({co,ar,ad},i)=>{
+        const cls=armClass(ad);
+        const disp=armDisplay(ad);
+        rEl.innerHTML+=`<div class="arm-item reveal" style="animation-delay:${.04+i*.1}s"><div class="arm-coord">${co}</div><span class="${cls}">${disp}</span></div>`;
+        lines.push(co+" "+ad.n+" "+ad.e);
+      });
+      const line=(hC?r.lab:r.lab+": "+r.ch)+"\n"+lines.join('\n');
+      if(r.side==='A')t1=line;else t2=line;
+    }
+  });
+  copyText=t1+"\n\n"+t2;
+  ['cardA','cardB'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('glow');void el.offsetWidth;el.classList.add('glow');
+  });
+}
+
+// ── COPY ──
+function cp(){
+  if(!copyText)return;
+  const ta=document.getElementById('temp-area');
+  ta.value=copyText;ta.select();document.execCommand('copy');
+  showMsg('コピーしました！');
+}
+
+// ── SAVE IMAGE → クリップボード ──
+let lastResults=null, lastHC=false;
+
+async function saveCard(){
+  if(!lastResults){showMsg('先に抽選してください');return;}
+  showMsg('画像を生成中...');
+
+  const W=760, H=480, PAD=16, R=12;
+  const canvas=document.getElementById('shareCanvas');
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+
+  // 背景
+  ctx.fillStyle='#0d0d0d'; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  for(let x=-H;x<W+H;x+=28){
+    ctx.strokeStyle='rgba(255,222,0,.022)';ctx.lineWidth=12;
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+H,H);ctx.stroke();
+  }
+  ctx.restore();
+
+  // ヘッダー
+  const hg=ctx.createLinearGradient(0,0,W,0);
+  hg.addColorStop(0,'#ffde00');hg.addColorStop(.5,'#ffe84d');hg.addColorStop(1,'#ffc200');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,W,56);
+  ctx.fillStyle='#0a0a0a';
+  ctx.font='bold 26px "Black Ops One",Impact,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('ARMS ROULETTE',W/2,36);
+  ctx.font='bold 9px sans-serif'; ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.fillText('RANDOM CHARACTER & ARMS SELECTION',W/2,50);
+
+  const hC=lastHC;
+  const cardW=(W-PAD*3)/2;
+
+  [{r:lastResults[0],x:PAD},{r:lastResults[1],x:PAD*2+cardW}].forEach(({r,x})=>{
+    const cX=x, cY=68, cW=cardW, cH=H-68-PAD;
+
+    // カード背景
+    ctx.fillStyle='#1c1c1c';
+    ctx.beginPath(); roundRect(ctx,cX,cY,cW,cH,R); ctx.fill();
+
+    // カード枠（黄色ライン）
+    ctx.strokeStyle='rgba(255,222,0,.4)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); roundRect(ctx,cX,cY,cW,cH,R); ctx.stroke();
+
+    // カードヘッダー背景（濃い黄みがかり黒）
+    ctx.fillStyle='#242000';
+    ctx.beginPath(); roundRect(ctx,cX,cY,cW,44,{tl:R,tr:R,bl:0,br:0}); ctx.fill();
+
+    // ヘッダー下ライン
+    ctx.strokeStyle='rgba(255,222,0,.35)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cX,cY+44); ctx.lineTo(cX+cW,cY+44); ctx.stroke();
+
+    // プレイヤー名（クリップして溢れ防止）
+    ctx.fillStyle='#ffde00';
+    ctx.font='bold 17px "Black Ops One",Impact,sans-serif';
+    ctx.textAlign='left';
+    ctx.save();
+    ctx.beginPath(); ctx.rect(cX+12,cY,cW-24,44); ctx.clip();
+    ctx.fillText(r.lab, cX+12, cY+29);
+    ctx.restore();
+
+    let cy=cY+56;
+
+    // キャラ名（黄色）
+    if(!hC && r.ch){
+      ctx.fillStyle='#ffde00';
+      ctx.font='bold 13px "Black Ops One",Impact,sans-serif';
+      ctx.save();
+      ctx.beginPath(); ctx.rect(cX+12,cy-14,cW-24,18); ctx.clip();
+      ctx.fillText(r.ch, cX+12, cy);
+      ctx.restore();
+      cy+=18;
+      ctx.strokeStyle='rgba(255,222,0,.15)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(cX+12,cy+3); ctx.lineTo(cX+cW-12,cy+3); ctx.stroke();
+      cy+=11;
+    }
+
+    if(r.special && r.armList[0]){
+      const ad=r.armList[0].ad;
+      const attrColor=attrDefs.find(d=>d.a===ad.a)?.color||'#ffde00';
+      ctx.fillStyle='#ff2d2d';
+      ctx.beginPath(); roundRect(ctx,cX+12,cy,64,18,3); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font='bold 8px Impact,sans-serif';
+      ctx.textAlign='center'; ctx.fillText('ALL SAME',cX+44,cy+13);
+      ctx.textAlign='left'; cy+=26;
+      ctx.fillStyle='#fff';
+      ctx.font='bold 26px "Black Ops One",Impact,sans-serif';
+      ctx.fillText(r.armList[0].co, cX+12, cy+26);
+      ctx.fillStyle=attrColor;
+      ctx.font='bold 13px "Noto Sans JP",sans-serif';
+      ctx.fillText(ad.n, cX+12, cy+44);
+    } else {
+      // アーム3本：残り高さを3等分・1行表示
+      const remaining=cH-(cy-cY)-8;
+      const slotH=Math.floor(remaining/3);
+
+      r.armList.forEach(({co,ad},i)=>{
+        const ay=cy+i*slotH;
+        // 区切り線
+        if(i>0){
+          ctx.strokeStyle='rgba(255,255,255,.07)'; ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(cX+12,ay+2); ctx.lineTo(cX+cW-12,ay+2); ctx.stroke();
+        }
+        const attrColor=attrDefs.find(d=>d.a===ad.a)?.color||'#ffde00';
+        const midY=ay+slotH*.62;
+
+        // 座標（グレー・小さめ固定幅）
+        ctx.fillStyle='#555';
+        ctx.font='bold 11px "Black Ops One",Impact,sans-serif';
+        ctx.textAlign='left';
+        ctx.fillText(co, cX+12, midY);
+        const coordW=ctx.measureText(co).width;
+
+        // アーム名（属性カラー・同行・残り幅でクリップ）
+        ctx.fillStyle=attrColor;
+        ctx.font='bold 14px "Noto Sans JP",sans-serif';
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cX+12+coordW+8, midY-16, cW-24-coordW-8, 20);
+        ctx.clip();
+        ctx.fillText(ad.n, cX+12+coordW+8, midY);
+        ctx.restore();
+      });
+    }
+  });
+
+  // フッター
+  ctx.fillStyle='rgba(255,255,255,.1)';
+  ctx.font='8px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('ARMS ROULETTE PRO', W/2, H-5);
+
+  // クリップボードにコピー
+  try{
+    canvas.toBlob(async blob=>{
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      showMsg('画像をクリップボードにコピーしました！');
+    },'image/png');
+  }catch(e){
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download='arms-result.png';
+    a.click();
+    showMsg('画像を保存しました（コピー非対応環境）');
+  }
+}
+function roundRect(ctx,x,y,w,h,r){
+  if(typeof r==='number')r={tl:r,tr:r,bl:r,br:r};
+  ctx.moveTo(x+r.tl,y);ctx.lineTo(x+w-r.tr,y);ctx.arcTo(x+w,y,x+w,y+r.tr,r.tr);
+  ctx.lineTo(x+w,y+h-r.br);ctx.arcTo(x+w,y+h,x+w-r.br,y+h,r.br);
+  ctx.lineTo(x+r.bl,y+h);ctx.arcTo(x,y+h,x,y+h-r.bl,r.bl);
+  ctx.lineTo(x,y+r.tl);ctx.arcTo(x,y,x+r.tl,y,r.tl);ctx.closePath();
+}
+
+function showMsg(t){
+  const el=document.getElementById('msg');
+  el.textContent=t;el.style.opacity='1';
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.textContent='',300);},2200);
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
